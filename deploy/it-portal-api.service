@@ -1,0 +1,18 @@
+[Unit]
+Description=IT Application Portal API
+After=network.target
+
+[Service]
+Type=simple
+User=it-portal
+WorkingDirectory=/opt/it-portal
+Environment=NODE_ENV=production
+Environment=IT_PORTAL_API_PORT=4501
+Environment=IT_PORTAL_APP_DIR=/opt/it-portal
+Environment=IT_PORTAL_DB_PATH=/opt/it-portal/data/it-portal.db
+ExecStart=/bin/bash -lc 'source "$HOME/.nvm/nvm.sh" && nvm use 22 && npm run start:server'
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

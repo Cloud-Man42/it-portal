@@ -1,0 +1,15 @@
+[Unit]
+Description=IT Application Portal (Caddy HTTPS static server)
+After=network.target
+
+[Service]
+Type=simple
+User=it-portal
+WorkingDirectory=/opt/it-portal
+Environment=IT_PORTAL_APP_DIR=/opt/it-portal
+ExecStart=/opt/it-portal/bin/caddy run --config /opt/it-portal/deploy/Caddyfile --adapter caddyfile
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

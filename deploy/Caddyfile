@@ -1,0 +1,24 @@
+{
+	auto_https disable_redirects
+}
+
+:4500 {
+	tls {$IT_PORTAL_APP_DIR}/certs/it-portal.pem {$IT_PORTAL_APP_DIR}/certs/it-portal-key.pem
+
+	encode gzip
+
+	handle /api/* {
+		reverse_proxy localhost:4501
+	}
+
+	handle {
+		root * {$IT_PORTAL_APP_DIR}/dist
+
+		@spa not file {path}
+		handle @spa {
+			rewrite * /index.html
+		}
+
+		file_server
+	}
+}
