@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   canDeployPlugins,
   canManageUsers,
+  canShareApps,
   canWriteApps,
   canWriteCategories,
   hasPermission,
@@ -23,6 +24,7 @@ describe('permissions', () => {
     expect(canWriteCategories('admin')).toBe(true)
     expect(canManageUsers('admin')).toBe(true)
     expect(canDeployPlugins('admin')).toBe(true)
+    expect(canShareApps('admin')).toBe(true)
     expect(hasPermission('admin', 'users.write')).toBe(true)
   })
 
@@ -31,6 +33,7 @@ describe('permissions', () => {
     expect(canWriteCategories('editor')).toBe(true)
     expect(canManageUsers('editor')).toBe(false)
     expect(canDeployPlugins('editor')).toBe(false)
+    expect(canShareApps('editor')).toBe(false)
     expect(hasPermission('editor', 'users.read')).toBe(false)
   })
 
@@ -40,6 +43,7 @@ describe('permissions', () => {
     expect(canManageUsers('viewer')).toBe(false)
     expect(hasPermission('viewer', 'apps.read')).toBe(true)
     expect(hasPermission('viewer', 'apps.write')).toBe(false)
+    expect(canShareApps('viewer')).toBe(false)
   })
 
   it('defines permissions for every role', () => {

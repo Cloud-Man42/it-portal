@@ -7,12 +7,14 @@ import { Dashboard, useFilteredCount } from './components/dashboard/Dashboard'
 import { AppShell } from './components/layout/AppShell'
 import type { CategoryFilterValue } from './components/filters/CategoryFilter'
 import { PluginCatalogModal } from './components/plugins/PluginCatalogModal'
+import { ShareConnectionsModal } from './components/shares/ShareConnectionsModal'
 import { UserFormModal } from './components/users/UserFormModal'
 import { UserManagerModal } from './components/users/UserManagerModal'
 import { getNextColor } from './lib/categories'
 import {
   canDeployPlugins,
   canManageUsers,
+  canShareApps,
   canWriteApps,
   canWriteCategories,
 } from './lib/permissions'
@@ -20,6 +22,7 @@ import { useApplications } from './hooks/useApplications'
 import { usePlugins } from './hooks/usePlugins'
 import { useAuth } from './hooks/useAuth'
 import { useCategories } from './hooks/useCategories'
+import { useShares } from './hooks/useShares'
 import { useUsers } from './hooks/useUsers'
 import type { Application } from './types/application'
 import type { CategoryGroup } from './types/category'
@@ -42,6 +45,7 @@ function App() {
     useCategories(isAuthenticated)
 
   const canManageUserDb = user ? canManageUsers(user.role) : false
+  const canShareConnections = user ? canShareApps(user.role) : false
   const canEditApps = user ? canWriteApps(user.role) : false
   const canInstallPlugins = user ? canDeployPlugins(user.role) : false
   const canEditCategories = user ? canWriteCategories(user.role) : false
@@ -53,6 +57,14 @@ function App() {
     updateUser,
     deleteUser,
   } = useUsers(canManageUserDb)
+
+  const {
+    shareableApplications,
+    users: shareUsers,
+    loading: sharesLoading,
+    refresh: refreshShares,
+    saveUserShares,
+  } = useShares(canShareConnections)
 
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilterValue>('All')
@@ -66,6 +78,7 @@ function App() {
   const [groupModalMode, setGroupModalMode] = useState<'add' | 'edit'>('add')
   const [editingCategory, setEditingCategory] = useState<CategoryGroup | undefined>()
 
+  const [shareModalOpen, setShareModalOpen] = useState(false)
   const [userManagerOpen, setUserManagerOpen] = useState(false)
   const [userModalOpen, setUserModalOpen] = useState(false)
   const [userModalMode, setUserModalMode] = useState<'add' | 'edit'>('add')
@@ -174,6 +187,10 @@ function App() {
         onAddFromCatalog={() => setPluginCatalogOpen(true)}
         onManageGroups={() => setGroupManagerOpen(true)}
         onManageUsers={() => setUserManagerOpen(true)}
+        onShareConnections={() => {
+          void refreshShares()
+          setShareModalOpen(true)
+        }}
         onLogout={() => void logout()}
         userDisplayName={user.displayName}
         userRole={user.role}
@@ -181,6 +198,7 @@ function App() {
         canInstallPlugins={canInstallPlugins}
         canEditCategories={canEditCategories}
         canManageUsers={canManageUserDb}
+        canShareConnections={canShareConnections}
       >
         <Dashboard
           applications={applications}
@@ -256,6 +274,17 @@ function App() {
             }}
           />
         </>
+      )}
+
+      {canShareConnections && (
+        <ShareConnectionsModal
+          open={shareModalOpen}
+          shareableApplications={shareableApplications}
+          users={shareUsers}
+          loading={sharesLoading}
+          onClose={() => setShareModalOpen(false)}
+          onSave={saveUserShares}
+        />
       )}
 
       {canManageUserDb && (

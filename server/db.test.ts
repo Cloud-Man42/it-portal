@@ -12,7 +12,11 @@ import {
   deleteUser,
   getUserByUsername,
   listApplications,
+  listApplicationsForUser,
   listCategories,
+  listCategoriesForUser,
+  listShareAssignments,
+  setUserApplicationShares,
   listUsers,
   updateUser,
   verifyPassword,
@@ -189,6 +193,114 @@ describe('user database', () => {
     expect(resolveCategoryIdForName(admin.id, 'Unknown Group')).toBe(
       listCategories(admin.id).find((category) => category.name === 'Other')?.id,
     )
+  })
+
+  it('shares admin connections with read-only users', () => {
+    const admin = getUserByUsername('admin')!
+    const viewer = createUser({
+      username: 'shared-viewer',
+      displayName: 'Shared Viewer',
+      password: 'secret',
+      role: 'viewer',
+    })
+
+    const adminApps = listApplications(admin.id)
+    expect(adminApps.length).toBeGreaterThan(0)
+
+    expect(listApplicationsForUser(viewer.id, 'viewer').length).toBe(0)
+
+    const sharedIds = adminApps.slice(0, 2).map((app) => app.id)
+    setUserApplicationShares(admin.id, viewer.id, sharedIds)
+
+    const viewerApps = listApplicationsForUser(viewer.id, 'viewer')
+    expect(viewerApps).toHaveLength(sharedIds.length)
+    expect(viewerApps.every((app) => app.shared)).toBe(true)
+    expect(viewerApps.every((app) => app.canEdit === false)).toBe(true)
+    expect(viewerApps.map((app) => app.id).sort()).toEqual(sharedIds.sort())
+
+    const viewerCategories = listCategoriesForUser(viewer.id, 'viewer')
+    expect(viewerCategories.length).toBeGreaterThan(0)
+    expect(
+      viewerCategories.every((category) =>
+        viewerApps.some((app) => app.category === category.id),
+      ),
+    ).toBe(true)
+  })
+
+  it('lets editors keep their own connections and use shared ones read-only', () => {
+    const admin = getUserByUsername('admin')!
+    const editor = createUser({
+      username: 'shared-editor',
+      displayName: 'Shared Editor',
+      password: 'secret',
+      role: 'editor',
+    })
+
+    const adminApp = listApplications(admin.id)[0]
+    const editorApp = createApplication(editor.id, {
+      plugin_id: '',
+      name: 'Editor App',
+      url: 'https://editor-only.local',
+      description: 'Owned by editor',
+      category: listCategories(editor.id)[0].id,
+      login_username: '',
+      login_password: '',
+    })
+
+    setUserApplicationShares(admin.id, editor.id, [adminApp.id])
+
+    const editorApps = listApplicationsForUser(editor.id, 'editor')
+    const own = editorApps.find((app) => app.id === editorApp.id)
+    const shared = editorApps.find((app) => app.id === adminApp.id)
+
+    expect(own).toBeDefined()
+    expect(shared).toBeDefined()
+    expect(own?.shared).toBe(false)
+    expect(own?.canEdit).toBe(true)
+    expect(shared?.shared).toBe(true)
+    expect(shared?.canEdit).toBe(false)
+    expect(editorApps.filter((app) => app.shared).map((app) => app.id)).toEqual([
+      adminApp.id,
+    ])
+  })
+
+  it('replaces share assignments per user and rejects invalid apps', () => {
+    const admin = getUserByUsername('admin')!
+    const viewer = createUser({
+      username: 'share-target',
+      displayName: 'Share Target',
+      password: 'secret',
+      role: 'viewer',
+    })
+    const editor = createUser({
+      username: 'other-editor',
+      displayName: 'Other Editor',
+      password: 'secret',
+      role: 'editor',
+    })
+
+    const adminApps = listApplications(admin.id)
+    setUserApplicationShares(admin.id, viewer.id, [adminApps[0].id])
+    setUserApplicationShares(admin.id, viewer.id, [adminApps[1].id])
+
+    const assignments = listShareAssignments(admin.id)
+    expect(assignments).toEqual([
+      { userId: viewer.id, applicationIds: [adminApps[1].id] },
+    ])
+
+    const editorApp = createApplication(editor.id, {
+      plugin_id: '',
+      name: 'Not shareable',
+      url: 'https://not-admin.local',
+      description: 'Owned by editor',
+      category: listCategories(editor.id)[0].id,
+      login_username: '',
+      login_password: '',
+    })
+
+    expect(() =>
+      setUserApplicationShares(admin.id, viewer.id, [editorApp.id]),
+    ).toThrow()
   })
 
   it('prevents deleting the last user', () => {

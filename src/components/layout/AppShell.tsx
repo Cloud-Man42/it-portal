@@ -20,6 +20,7 @@ interface AppShellProps {
   onAddFromCatalog: () => void
   onManageGroups: () => void
   onManageUsers: () => void
+  onShareConnections: () => void
   onLogout: () => void
   userDisplayName: string
   userRole: Role
@@ -27,6 +28,7 @@ interface AppShellProps {
   canInstallPlugins: boolean
   canEditCategories: boolean
   canManageUsers: boolean
+  canShareConnections: boolean
 }
 
 export function AppShell({
@@ -42,6 +44,7 @@ export function AppShell({
   onAddFromCatalog,
   onManageGroups,
   onManageUsers,
+  onShareConnections,
   onLogout,
   userDisplayName,
   userRole,
@@ -49,6 +52,7 @@ export function AppShell({
   canInstallPlugins,
   canEditCategories,
   canManageUsers,
+  canShareConnections,
 }: AppShellProps) {
   return (
     <div className="flex min-h-screen flex-col lg:flex-row">
@@ -60,8 +64,10 @@ export function AppShell({
         filteredCount={filteredCount}
         onManageGroups={onManageGroups}
         onManageUsers={onManageUsers}
+        onShareConnections={onShareConnections}
         canEditCategories={canEditCategories}
         canManageUsers={canManageUsers}
+        canShareConnections={canShareConnections}
       />
 
       <div className="flex min-w-0 flex-1 flex-col">

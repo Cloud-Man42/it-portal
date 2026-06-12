@@ -1,0 +1,32 @@
+---
+description: Require unit tests for all new IT Portal functionality
+alwaysApply: true
+---
+
+# Testing Requirement
+
+- Add or update unit tests whenever adding or changing functionality in this project.
+- New features are not complete until tests exist and `.\test-windows.ps1` passes.
+- Always run `.\test-windows.ps1` before finishing work that adds or changes behavior.
+
+## Coverage expectations
+
+- **Backend** (`server/`, `shared/`): DB logic, middleware, and HTTP routes via Vitest + Supertest.
+- **Frontend** (`src/`): pure helpers/hooks and user-visible components via Vitest + React Testing Library.
+- Include **positive and negative** cases: validation failures, permission denials, empty states, not-found paths, and invalid input.
+
+## Test placement
+
+- Colocate tests as `*.test.ts` or `*.test.tsx` next to the code or in the same feature folder.
+- Prefer fast unit tests with isolated SQLite databases and mocked `fetch` for the client.
+- Do not depend on the production database, real IPTV providers, or external network services.
+
+## Examples
+
+```typescript
+// Route test: assert 403 for viewers
+await viewerAgent.post('/api/applications').send(payload).expect(403)
+
+// Component test: assert read-only empty state
+expect(screen.getByText('No shared connections')).toBeInTheDocument()
+```

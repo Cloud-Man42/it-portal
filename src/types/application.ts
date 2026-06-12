@@ -8,6 +8,8 @@ export interface Application {
   loginPassword: string
   pluginId: string
   createdAt: string
+  shared?: boolean
+  canEdit?: boolean
 }
 
 export type ApplicationInput = Omit<Application, 'id' | 'createdAt'>

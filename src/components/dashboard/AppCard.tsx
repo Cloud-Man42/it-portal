@@ -104,9 +104,12 @@ export function AppCard({
       </div>
 
       <div className="flex items-center justify-between gap-3">
-        <h3 className="min-w-0 text-base font-semibold text-slate-100">
-          {application.name}
-        </h3>
+        <div className="min-w-0">
+          <h3 className="text-base font-semibold text-slate-100">{application.name}</h3>
+          {application.shared && (
+            <p className="mt-1 text-xs text-slate-500">Shared connection</p>
+          )}
+        </div>
         <div className="flex h-18 w-18 shrink-0 items-center justify-center rounded-lg bg-slate-950/80 ring-1 ring-slate-700/80 ring-inset">
           <CategoryIcon iconId={meta.iconId} size="card" />
         </div>

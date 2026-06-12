@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url'
 import bcrypt from 'bcryptjs'
 import type { PluginServerStatus } from '../shared/plugins.js'
 import type { Role } from '../shared/permissions.js'
-import { isRole } from '../shared/permissions.js'
+import { canWriteApps, isRole } from '../shared/permissions.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const defaultDbPath = resolve(__dirname, '..', 'data', 'it-portal.db')
@@ -141,6 +141,14 @@ function initializeSchema(database: Database.Database): void {
       last_error TEXT NOT NULL DEFAULT '',
       installed_at TEXT NOT NULL DEFAULT '',
       updated_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS application_shares (
+      application_id TEXT NOT NULL REFERENCES applications(id) ON DELETE CASCADE,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      shared_by TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      created_at TEXT NOT NULL,
+      PRIMARY KEY (application_id, user_id)
     );
   `)
 }
@@ -456,12 +464,140 @@ export function deleteExpiredSessions(): void {
     .run(new Date().toISOString())
 }
 
+export interface ApplicationWithAccess extends ApplicationRow {
+  shared: boolean
+  canEdit: boolean
+}
+
+export interface ShareAssignment {
+  userId: string
+  applicationIds: string[]
+}
+
 export function listApplications(userId: string): ApplicationRow[] {
   return getDb()
     .prepare(
       `SELECT * FROM applications WHERE user_id = ? ORDER BY created_at DESC`,
     )
     .all(userId) as ApplicationRow[]
+}
+
+export function listApplicationsForUser(
+  userId: string,
+  role: Role,
+): ApplicationWithAccess[] {
+  const canEditOwn = canWriteApps(role)
+
+  if (role === 'admin') {
+    return listApplications(userId).map((row) => ({
+      ...row,
+      shared: false,
+      canEdit: true,
+    }))
+  }
+
+  const ownApps =
+    role === 'editor'
+      ? listApplications(userId).map((row) => ({
+          ...row,
+          shared: false,
+          canEdit: canEditOwn,
+        }))
+      : []
+
+  const sharedRows = getDb()
+    .prepare(
+      `SELECT a.*
+       FROM applications a
+       INNER JOIN application_shares s ON s.application_id = a.id
+       WHERE s.user_id = ?
+       ORDER BY a.created_at DESC`,
+    )
+    .all(userId) as ApplicationRow[]
+
+  const ownIds = new Set(ownApps.map((app) => app.id))
+  const sharedApps = sharedRows
+    .filter((row) => !ownIds.has(row.id))
+    .map((row) => ({
+      ...row,
+      shared: true,
+      canEdit: false,
+    }))
+
+  return [...ownApps, ...sharedApps]
+}
+
+export function listCategoriesForUser(userId: string, role: Role): CategoryRow[] {
+  const apps = listApplicationsForUser(userId, role)
+  const categoryIds = [...new Set(apps.map((app) => app.category))]
+  if (categoryIds.length === 0) return []
+
+  const placeholders = categoryIds.map(() => '?').join(',')
+  return getDb()
+    .prepare(
+      `SELECT * FROM categories WHERE id IN (${placeholders}) ORDER BY name COLLATE NOCASE`,
+    )
+    .all(...categoryIds) as CategoryRow[]
+}
+
+export function listShareAssignments(adminId: string): ShareAssignment[] {
+  const rows = getDb()
+    .prepare(
+      `SELECT user_id, application_id FROM application_shares WHERE shared_by = ?`,
+    )
+    .all(adminId) as Array<{ user_id: string; application_id: string }>
+
+  const byUser = new Map<string, string[]>()
+  for (const row of rows) {
+    const list = byUser.get(row.user_id) ?? []
+    list.push(row.application_id)
+    byUser.set(row.user_id, list)
+  }
+
+  return [...byUser.entries()].map(([userId, applicationIds]) => ({
+    userId,
+    applicationIds,
+  }))
+}
+
+export function setUserApplicationShares(
+  adminId: string,
+  targetUserId: string,
+  applicationIds: string[],
+): void {
+  const target = getUserById(targetUserId)
+  if (!target) {
+    throw new Error('User not found.')
+  }
+
+  if (target.role === 'admin') {
+    throw new Error('Cannot share connections with another administrator.')
+  }
+
+  const adminAppIds = new Set(listApplications(adminId).map((app) => app.id))
+  for (const applicationId of applicationIds) {
+    if (!adminAppIds.has(applicationId)) {
+      throw new Error('One or more connections are not owned by the administrator.')
+    }
+  }
+
+  const database = getDb()
+  const replaceShares = database.transaction(() => {
+    database
+      .prepare(`DELETE FROM application_shares WHERE shared_by = ? AND user_id = ?`)
+      .run(adminId, targetUserId)
+
+    const insert = database.prepare(
+      `INSERT INTO application_shares (application_id, user_id, shared_by, created_at)
+       VALUES (?, ?, ?, ?)`,
+    )
+    const now = new Date().toISOString()
+    for (const applicationId of applicationIds) {
+      insert.run(applicationId, targetUserId, adminId, now)
+    }
+  })
+
+  replaceShares()
 }
 
 export function getApplication(userId: string, id: string): ApplicationRow | undefined {

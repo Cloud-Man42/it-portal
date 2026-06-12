@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { filterApplications } from '../../lib/applicationFilters'
 import type { CategoryGroup } from '../../types/category'
 import type { Application } from '../../types/application'
 import type { CategoryFilterValue } from '../filters/CategoryFilter'
@@ -28,29 +29,21 @@ export function Dashboard({
     [categories],
   )
 
-  const filteredApplications = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase()
-
-    return applications.filter((app) => {
-      const matchesCategory =
-        categoryFilter === 'All' || app.category === categoryFilter
-
-      const matchesSearch =
-        query.length === 0 ||
-        app.name.toLowerCase().includes(query) ||
-        app.description.toLowerCase().includes(query) ||
-        app.url.toLowerCase().includes(query)
-
-      return matchesCategory && matchesSearch
-    })
-  }, [applications, searchQuery, categoryFilter])
+  const filteredApplications = useMemo(
+    () => filterApplications(applications, searchQuery, categoryFilter),
+    [applications, searchQuery, categoryFilter],
+  )
 
   if (filteredApplications.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-slate-700 bg-slate-900/40 px-6 py-16 text-center">
-        <h2 className="text-lg font-medium text-slate-200">No applications found</h2>
+        <h2 className="text-lg font-medium text-slate-200">
+          {canEdit ? 'No applications found' : 'No shared connections'}
+        </h2>
         <p className="mt-2 text-sm text-slate-500">
-          Try adjusting your search or filter, or add a new application.
+          {canEdit
+            ? 'Try adjusting your search or filter, or add a new application.'
+            : 'No connections have been shared with you yet. Contact your administrator.'}
         </p>
       </div>
     )
@@ -65,7 +58,7 @@ export function Dashboard({
           category={categoryMap.get(application.category)}
           onEdit={onEdit}
           onDelete={onDelete}
-          canEdit={canEdit}
+          canEdit={application.canEdit ?? canEdit}
         />
       ))}
     </div>
@@ -77,20 +70,8 @@ export function useFilteredCount(
   searchQuery: string,
   categoryFilter: CategoryFilterValue,
 ) {
-  return useMemo(() => {
-    const query = searchQuery.trim().toLowerCase()
-
-    return applications.filter((app) => {
-      const matchesCategory =
-        categoryFilter === 'All' || app.category === categoryFilter
-
-      const matchesSearch =
-        query.length === 0 ||
-        app.name.toLowerCase().includes(query) ||
-        app.description.toLowerCase().includes(query) ||
-        app.url.toLowerCase().includes(query)
-
-      return matchesCategory && matchesSearch
-    }).length
-  }, [applications, searchQuery, categoryFilter])
+  return useMemo(
+    () => filterApplications(applications, searchQuery, categoryFilter).length,
+    [applications, searchQuery, categoryFilter],
+  )
 }

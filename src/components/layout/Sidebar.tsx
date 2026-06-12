@@ -1,4 +1,4 @@
-import { LayoutGrid, Settings2, Users } from 'lucide-react'
+import { LayoutGrid, Settings2, Share2, Users } from 'lucide-react'
 import { CategoryIcon } from '../categories/CategoryIcon'
 import { getCategoryMeta, portalIcon } from '../../lib/categories'
 import type { CategoryGroup } from '../../types/category'
@@ -12,8 +12,10 @@ interface SidebarProps {
   filteredCount: number
   onManageGroups: () => void
   onManageUsers: () => void
+  onShareConnections: () => void
   canEditCategories: boolean
   canManageUsers: boolean
+  canShareConnections: boolean
 }
 
 export function Sidebar({
@@ -24,8 +26,10 @@ export function Sidebar({
   filteredCount,
   onManageGroups,
   onManageUsers,
+  onShareConnections,
   canEditCategories,
   canManageUsers,
+  canShareConnections,
 }: SidebarProps) {
   const PortalIcon = portalIcon
 
@@ -82,6 +86,17 @@ export function Sidebar({
         >
           <Settings2 className="h-4 w-4" aria-hidden="true" />
           Manage groups
+        </button>
+      )}
+
+      {canShareConnections && (
+        <button
+          type="button"
+          onClick={onShareConnections}
+          className="mt-2 flex w-full items-center gap-2 rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-400 transition hover:border-slate-600 hover:bg-slate-800/60 hover:text-slate-200"
+        >
+          <Share2 className="h-4 w-4" aria-hidden="true" />
+          Share connections
         </button>
       )}
 

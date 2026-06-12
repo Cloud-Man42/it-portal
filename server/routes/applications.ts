@@ -3,9 +3,11 @@ import {
   createApplication,
   deleteApplication,
   getApplication,
-  listApplications,
+  listApplicationsForUser,
   listCategories,
   updateApplication,
+  type ApplicationRow,
+  type ApplicationWithAccess,
 } from '../db.js'
 import {
   requireAuth,
@@ -18,7 +20,13 @@ export const applicationsRouter = Router()
 
 applicationsRouter.use(requireAuth)
 
-function toApplicationDto(row: ReturnType<typeof listApplications>[number]) {
+function toOwnedApplicationDto(row: ApplicationWithAccess | ApplicationRow) {
+  const shared = 'shared' in row ? row.shared : false
+  const canEdit = 'canEdit' in row ? row.canEdit : true
+  return toApplicationDto({ ...row, shared, canEdit })
+}
+
+function toApplicationDto(row: ApplicationWithAccess) {
   return {
     id: row.id,
     name: row.name,
@@ -29,6 +37,8 @@ function toApplicationDto(row: ReturnType<typeof listApplications>[number]) {
     loginPassword: row.login_password,
     pluginId: row.plugin_id,
     createdAt: row.created_at,
+    shared: row.shared,
+    canEdit: row.canEdit,
   }
 }
 
@@ -55,8 +65,10 @@ function categoryExists(userId: string, categoryId: string): boolean {
 }
 
 applicationsRouter.get('/', requirePermission('apps.read'), (req: AuthenticatedRequest, res) => {
-  const userId = req.user!.id
-  res.json({ applications: listApplications(userId).map(toApplicationDto) })
+  const user = req.user!
+  res.json({
+    applications: listApplicationsForUser(user.id, user.role).map(toApplicationDto),
+  })
 })
 
 applicationsRouter.post('/', requirePermission('apps.write'), (req: AuthenticatedRequest, res) => {
@@ -91,7 +103,7 @@ applicationsRouter.post('/', requirePermission('apps.write'), (req: Authenticate
     category,
     ...credentials,
   })
-  res.status(201).json({ application: toApplicationDto(created) })
+  res.status(201).json({ application: toOwnedApplicationDto(created) })
 })
 
 applicationsRouter.put('/:id', requirePermission('apps.write'), (req: AuthenticatedRequest, res) => {
@@ -138,7 +150,7 @@ applicationsRouter.put('/:id', requirePermission('apps.write'), (req: Authentica
     return
   }
 
-  res.json({ application: toApplicationDto(updated) })
+  res.json({ application: toOwnedApplicationDto(updated) })
 })
 
 applicationsRouter.delete('/:id', requirePermission('apps.write'), (req: AuthenticatedRequest, res) => {

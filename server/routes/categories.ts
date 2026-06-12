@@ -5,6 +5,7 @@ import {
   deleteCategory,
   getCategory,
   listCategories,
+  listCategoriesForUser,
   moveApplicationsToCategory,
   updateCategory,
 } from '../db.js'
@@ -30,8 +31,10 @@ function toCategoryDto(row: ReturnType<typeof listCategories>[number]) {
 }
 
 categoriesRouter.get('/', requirePermission('categories.read'), (req: AuthenticatedRequest, res) => {
-  const userId = req.user!.id
-  res.json({ categories: listCategories(userId).map(toCategoryDto) })
+  const user = req.user!
+  res.json({
+    categories: listCategoriesForUser(user.id, user.role).map(toCategoryDto),
+  })
 })
 
 categoriesRouter.post('/', requirePermission('categories.write'), (req: AuthenticatedRequest, res) => {
