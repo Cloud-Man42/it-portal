@@ -45,7 +45,7 @@ Write-Host "==> Preparing archive from $Root"
 Push-Location $Root
 try {
   if (Test-Path $Archive) { Remove-Item $Archive -Force }
-  tar -czf $Archive --exclude=node_modules --exclude=dist --exclude=.git --exclude=certs --exclude=data .
+  tar -czf $Archive --exclude=node_modules --exclude=dist --exclude=.git --exclude=./certs .
   if ($LASTEXITCODE -ne 0) { throw "tar failed" }
 }
 finally {
