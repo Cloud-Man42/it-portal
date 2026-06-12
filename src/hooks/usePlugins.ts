@@ -1,7 +1,11 @@
 import { useCallback, useState } from 'react'
 import { apiFetch } from '../lib/api'
 import type { Application } from '../types/application'
-import type { PluginCatalogResponse, PluginInstallResponse } from '../types/plugin'
+import type {
+  PluginCatalogResponse,
+  PluginInstallOptions,
+  PluginInstallResponse,
+} from '../types/plugin'
 
 export function usePlugins() {
   const [loading, setLoading] = useState(false)
@@ -16,18 +20,24 @@ export function usePlugins() {
     }
   }, [])
 
-  const installPlugin = useCallback(async (pluginId: string): Promise<Application> => {
-    setInstallingId(pluginId)
-    try {
-      const data = await apiFetch<PluginInstallResponse>(
-        `/api/plugins/${encodeURIComponent(pluginId)}/install`,
-        { method: 'POST' },
-      )
-      return data.application
-    } finally {
-      setInstallingId(null)
-    }
-  }, [])
+  const installPlugin = useCallback(
+    async (pluginId: string, options: PluginInstallOptions): Promise<Application> => {
+      setInstallingId(pluginId)
+      try {
+        const data = await apiFetch<PluginInstallResponse>(
+          `/api/plugins/${encodeURIComponent(pluginId)}/install`,
+          {
+            method: 'POST',
+            body: JSON.stringify(options),
+          },
+        )
+        return data.application
+      } finally {
+        setInstallingId(null)
+      }
+    },
+    [],
+  )
 
   return {
     loading,

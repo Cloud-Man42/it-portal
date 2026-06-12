@@ -1,6 +1,6 @@
 # IT Application Portal
 
-A private dashboard for quick access to administrative tools in your IT environment (VMware, network, VPN, firewalls, monitoring, and internal utilities).
+A dashboard for quick access to administrative tools in your IT environment (VMware, network, VPN, firewalls, monitoring, and internal utilities).
 
 Built with React, TypeScript, Tailwind CSS, Express, and SQLite. Application and user data is stored in a shared SQLite database on the server.
 
@@ -20,11 +20,13 @@ Built with React, TypeScript, Tailwind CSS, Express, and SQLite. Application and
 - Create, edit, and delete custom groups (editor/admin)
 - Dark theme with responsive layout and sidebar navigation
 - Seeded with example applications and a default admin account on first start
+- **Install applications** from a GitHub plugin catalog (Wake on LAN, WiFi Optimizer, VPN Portal)
+- Install plugins on the IT Portal server or remotely over SSH on another host
 
 ## Local development
 
 ```powershell
-git clone <repository-url>
+git clone https://github.com/Cloud-Man42/it-portal.git
 cd it-portal
 npm install
 npm run dev
@@ -106,6 +108,24 @@ data/               # SQLite database (created at runtime, not in git)
 User accounts, sessions, applications, and categories are stored in `data/it-portal.db` (SQLite), relative to the application directory.
 
 Each user has their **own dashboard** — applications and groups are scoped to `user_id` in the database. Logging in from another browser or device shows the same personal dashboard. Session cookies are only used for authentication, not for storing dashboard data.
+
+## Plugin installation
+
+Admins can install applications from `plugins/catalog.json` via **Install applications** in the dashboard.
+
+1. IT Portal checks whether the app is already running on the portal server.
+2. If not, you choose **this server** or **another server** (FQDN/IP + SSH credentials).
+3. The portal downloads the app from GitHub, installs it, and adds a dashboard link to the live URL.
+
+Server environment variables (see `.env.example` and `deploy/api.env.example`):
+
+- `IT_PORTAL_SERVER_HOST` — public hostname/IP used in plugin URLs
+- `IT_PORTAL_PLUGINS_DIR` — directory for installed plugins
+- `IT_PORTAL_PLUGIN_CATALOG_URL` — raw JSON URL for the plugin catalog
+- `IT_PORTAL_GITHUB_TOKEN` — required for private plugin repositories
+- `IT_PORTAL_SUDO_PASSWORD` — optional sudo password for plugins that need it
+
+Remote installation requires `sshpass` on the IT Portal server (`sudo apt install sshpass`).
 
 ## Tests
 

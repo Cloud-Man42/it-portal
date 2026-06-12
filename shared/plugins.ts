@@ -1,12 +1,32 @@
+export type PluginServerStatus =
+  | 'not_installed'
+  | 'installing'
+  | 'installed'
+  | 'failed'
+  | 'unsupported'
+
+export interface PluginDeploySpec {
+  repository: string
+  branch: string
+  installScript: string
+  installDir: string
+  port: number
+  healthPath: string
+  urlPath: string
+  serviceName: string
+  privateRepository?: boolean
+}
+
 export interface PluginDefinition {
   id: string
   name: string
   description: string
-  url: string
   category: string
   tags: string[]
+  url?: string
   loginUsername?: string
   loginPassword?: string
+  deploy?: PluginDeploySpec
 }
 
 export interface PluginCatalog {
@@ -29,21 +49,42 @@ function isValidUrl(url: string): boolean {
   }
 }
 
+export function isPluginDeploySpec(value: unknown): value is PluginDeploySpec {
+  if (!value || typeof value !== 'object') return false
+
+  const deploy = value as PluginDeploySpec
+
+  return (
+    isNonEmptyString(deploy.repository) &&
+    isNonEmptyString(deploy.branch) &&
+    isNonEmptyString(deploy.installScript) &&
+    isNonEmptyString(deploy.installDir) &&
+    typeof deploy.port === 'number' &&
+    deploy.port > 0 &&
+    deploy.port <= 65535 &&
+    isNonEmptyString(deploy.healthPath) &&
+    typeof deploy.urlPath === 'string' &&
+    isNonEmptyString(deploy.serviceName)
+  )
+}
+
 export function isPluginDefinition(value: unknown): value is PluginDefinition {
   if (!value || typeof value !== 'object') return false
 
   const plugin = value as PluginDefinition
   const tags = plugin.tags
+  const hasDeploy = plugin.deploy !== undefined
+  const url = plugin.url
 
   return (
     isNonEmptyString(plugin.id) &&
     isNonEmptyString(plugin.name) &&
     isNonEmptyString(plugin.description) &&
-    isNonEmptyString(plugin.url) &&
-    isValidUrl(plugin.url) &&
+    (hasDeploy || (isNonEmptyString(url) && isValidUrl(url))) &&
     isNonEmptyString(plugin.category) &&
     Array.isArray(tags) &&
-    tags.every((tag) => typeof tag === 'string')
+    tags.every((tag) => typeof tag === 'string') &&
+    (plugin.deploy === undefined || isPluginDeploySpec(plugin.deploy))
   )
 }
 
@@ -96,4 +137,29 @@ export function findPluginById(
   pluginId: string,
 ): PluginDefinition | undefined {
   return catalog.plugins.find((plugin) => plugin.id === pluginId)
+}
+
+export function isDeployablePlugin(plugin: PluginDefinition): boolean {
+  return plugin.deploy !== undefined
+}
+
+export function buildPluginServiceUrl(
+  host: string,
+  deploy: PluginDeploySpec,
+  protocol: 'http' | 'https' = 'https',
+): string {
+  const path = deploy.urlPath || '/'
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+  return `${protocol}://${host}:${deploy.port}${normalizedPath}`
+}
+
+export function buildPluginHealthUrl(
+  host: string,
+  deploy: PluginDeploySpec,
+  protocol: 'http' | 'https' = 'https',
+): string {
+  const path = deploy.healthPath.startsWith('/')
+    ? deploy.healthPath
+    : `/${deploy.healthPath}`
+  return `${protocol}://${host}:${deploy.port}${path}`
 }

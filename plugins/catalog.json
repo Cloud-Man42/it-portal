@@ -1,71 +1,59 @@
 {
-  "version": 1,
-  "updatedAt": "2026-06-11T00:00:00.000Z",
+  "version": 2,
+  "updatedAt": "2026-06-12T00:00:00.000Z",
   "source": "https://github.com/Cloud-Man42/it-portal/tree/master/plugins",
   "plugins": [
     {
       "id": "wake-on-lan",
       "name": "Wake on LAN",
-      "description": "Send magic packets to wake sleeping machines on your network.",
-      "url": "https://wakeonlan.local",
+      "description": "Download and run the Wake-on-LAN admin app on this server. Manage devices and send magic packets from your network.",
       "category": "Network",
-      "tags": ["network", "power", "hardware"]
+      "tags": ["network", "power", "hardware", "wol"],
+      "deploy": {
+        "repository": "https://github.com/Cloud-Man42/wol-admin.git",
+        "branch": "main",
+        "installScript": "wake-on-lan.sh",
+        "installDir": "wake-on-lan",
+        "port": 3001,
+        "healthPath": "/api/devices",
+        "urlPath": "/",
+        "serviceName": "it-portal-plugin-wake-on-lan"
+      }
     },
     {
       "id": "vpn-portal",
       "name": "VPN Portal",
-      "description": "Manage VPN users, certificates, and connection status.",
-      "url": "https://vpn.local/portal",
+      "description": "Download and install the OpenVPN admin web UI on this server when it is not already running locally.",
       "category": "VPN",
-      "tags": ["vpn", "remote-access", "security"]
+      "tags": ["vpn", "remote-access", "security", "openvpn"],
+      "deploy": {
+        "repository": "https://github.com/Cloud-Man42/Openvpnwebui.git",
+        "branch": "main",
+        "installScript": "vpn-portal.sh",
+        "installDir": "vpn-portal",
+        "port": 3000,
+        "healthPath": "/api/health",
+        "urlPath": "/",
+        "serviceName": "it-portal-plugin-vpn-portal",
+        "privateRepository": true
+      }
     },
     {
       "id": "wifi-optimizer",
       "name": "WiFi Optimizer",
-      "description": "Analyze channels, signal strength, and optimize wireless coverage.",
-      "url": "https://wifi.local/optimizer",
+      "description": "Download and run the UniFi AI Optimizer on this server for wireless analysis and recommendations.",
       "category": "Network",
-      "tags": ["wifi", "wireless", "network"]
-    },
-    {
-      "id": "vmware-vcenter",
-      "name": "VMware vCenter",
-      "description": "Manage virtual machines, hosts, and clusters.",
-      "url": "https://vcenter.local",
-      "category": "VMware",
-      "tags": ["vmware", "virtualization"]
-    },
-    {
-      "id": "firewall-admin",
-      "name": "Firewall Admin",
-      "description": "Configure firewall rules, NAT, and security policies.",
-      "url": "https://firewall.local/admin",
-      "category": "Security",
-      "tags": ["firewall", "security"]
-    },
-    {
-      "id": "network-monitoring",
-      "name": "Network Monitoring",
-      "description": "Network health dashboards, alerts, and performance metrics.",
-      "url": "https://monitoring.local",
-      "category": "Monitoring",
-      "tags": ["monitoring", "alerts"]
-    },
-    {
-      "id": "dns-admin",
-      "name": "DNS Admin",
-      "description": "Manage DNS zones and records.",
-      "url": "https://dns.local/admin",
-      "category": "Network",
-      "tags": ["dns", "network"]
-    },
-    {
-      "id": "backup-console",
-      "name": "Backup Console",
-      "description": "Backup jobs, restore points, and retention policies.",
-      "url": "https://backup.local/console",
-      "category": "Other",
-      "tags": ["backup", "storage"]
+      "tags": ["wifi", "wireless", "network", "unifi"],
+      "deploy": {
+        "repository": "https://github.com/Cloud-Man42/unifi-ai-optimizer.git",
+        "branch": "main",
+        "installScript": "wifi-optimizer.sh",
+        "installDir": "wifi-optimizer",
+        "port": 8088,
+        "healthPath": "/health",
+        "urlPath": "/ui/",
+        "serviceName": "it-portal-plugin-wifi-optimizer"
+      }
     }
   ]
 }

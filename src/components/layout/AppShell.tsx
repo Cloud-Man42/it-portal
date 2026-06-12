@@ -24,6 +24,7 @@ interface AppShellProps {
   userDisplayName: string
   userRole: Role
   canEditApps: boolean
+  canInstallPlugins: boolean
   canEditCategories: boolean
   canManageUsers: boolean
 }
@@ -45,6 +46,7 @@ export function AppShell({
   userDisplayName,
   userRole,
   canEditApps,
+  canInstallPlugins,
   canEditCategories,
   canManageUsers,
 }: AppShellProps) {
@@ -78,16 +80,19 @@ export function AppShell({
                 value={categoryFilter}
                 onChange={onCategoryChange}
               />
-              {canEditApps && (
+              {(canInstallPlugins || canEditApps) && (
                 <div className="flex flex-col gap-2 sm:flex-row">
-                  <button
-                    type="button"
-                    onClick={onAddFromCatalog}
-                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-600 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:border-sky-500/50 hover:bg-slate-800/60"
-                  >
-                    <Package className="h-4 w-4" aria-hidden="true" />
-                    Add from catalog
-                  </button>
+                  {canInstallPlugins && (
+                    <button
+                      type="button"
+                      onClick={onAddFromCatalog}
+                      className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-600 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:border-sky-500/50 hover:bg-slate-800/60"
+                    >
+                      <Package className="h-4 w-4" aria-hidden="true" />
+                      Install applications
+                    </button>
+                  )}
+                  {canEditApps && (
                   <button
                     type="button"
                     onClick={onAddClick}
@@ -96,6 +101,7 @@ export function AppShell({
                     <Plus className="h-4 w-4" aria-hidden="true" />
                     Add application
                   </button>
+                  )}
                 </div>
               )}
             </div>

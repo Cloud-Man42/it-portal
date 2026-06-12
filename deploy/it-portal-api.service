@@ -10,6 +10,9 @@ Environment=NODE_ENV=production
 Environment=IT_PORTAL_API_PORT=4501
 Environment=IT_PORTAL_APP_DIR=/opt/it-portal
 Environment=IT_PORTAL_DB_PATH=/opt/it-portal/data/it-portal.db
+Environment=IT_PORTAL_SERVER_HOST=IT_PORTAL_SERVER_HOST_PLACEHOLDER
+Environment=IT_PORTAL_PLUGINS_DIR=IT_PORTAL_PLUGINS_DIR_PLACEHOLDER
+EnvironmentFile=-/opt/it-portal/api.env
 ExecStart=/bin/bash -lc 'source "$HOME/.nvm/nvm.sh" && nvm use 22 && npm run start:server'
 Restart=on-failure
 RestartSec=5

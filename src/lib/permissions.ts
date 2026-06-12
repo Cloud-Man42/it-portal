@@ -1,4 +1,5 @@
 export {
+  canDeployPlugins,
   canManageUsers,
   canWriteApps,
   canWriteCategories,

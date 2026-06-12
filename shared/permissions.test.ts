@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  canDeployPlugins,
   canManageUsers,
   canWriteApps,
   canWriteCategories,
@@ -21,6 +22,7 @@ describe('permissions', () => {
     expect(canWriteApps('admin')).toBe(true)
     expect(canWriteCategories('admin')).toBe(true)
     expect(canManageUsers('admin')).toBe(true)
+    expect(canDeployPlugins('admin')).toBe(true)
     expect(hasPermission('admin', 'users.write')).toBe(true)
   })
 
@@ -28,6 +30,7 @@ describe('permissions', () => {
     expect(canWriteApps('editor')).toBe(true)
     expect(canWriteCategories('editor')).toBe(true)
     expect(canManageUsers('editor')).toBe(false)
+    expect(canDeployPlugins('editor')).toBe(false)
     expect(hasPermission('editor', 'users.read')).toBe(false)
   })
 

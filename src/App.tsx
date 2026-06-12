@@ -10,7 +10,12 @@ import { PluginCatalogModal } from './components/plugins/PluginCatalogModal'
 import { UserFormModal } from './components/users/UserFormModal'
 import { UserManagerModal } from './components/users/UserManagerModal'
 import { getNextColor } from './lib/categories'
-import { canManageUsers, canWriteApps, canWriteCategories } from './lib/permissions'
+import {
+  canDeployPlugins,
+  canManageUsers,
+  canWriteApps,
+  canWriteCategories,
+} from './lib/permissions'
 import { useApplications } from './hooks/useApplications'
 import { usePlugins } from './hooks/usePlugins'
 import { useAuth } from './hooks/useAuth'
@@ -38,6 +43,7 @@ function App() {
 
   const canManageUserDb = user ? canManageUsers(user.role) : false
   const canEditApps = user ? canWriteApps(user.role) : false
+  const canInstallPlugins = user ? canDeployPlugins(user.role) : false
   const canEditCategories = user ? canWriteCategories(user.role) : false
 
   const {
@@ -172,6 +178,7 @@ function App() {
         userDisplayName={user.displayName}
         userRole={user.role}
         canEditApps={canEditApps}
+        canInstallPlugins={canInstallPlugins}
         canEditCategories={canEditCategories}
         canManageUsers={canManageUserDb}
       >
@@ -186,23 +193,24 @@ function App() {
         />
       </AppShell>
 
-      {canEditApps && (
-        <>
-          <PluginCatalogModal
-            open={pluginCatalogOpen}
-            installedApplications={applications}
-            onClose={() => setPluginCatalogOpen(false)}
-            onFetchCatalog={fetchCatalog}
-            onInstall={async (pluginId) => {
-              const application = await installPlugin(pluginId)
+      {canInstallPlugins && (
+        <PluginCatalogModal
+          open={pluginCatalogOpen}
+          installedApplications={applications}
+          onClose={() => setPluginCatalogOpen(false)}
+          onFetchCatalog={fetchCatalog}
+            onInstall={async (pluginId, options) => {
+              const application = await installPlugin(pluginId, options)
               await refreshApplications()
               return application
             }}
-            loading={pluginsLoading}
-            installingId={installingId}
-          />
+          loading={pluginsLoading}
+          installingId={installingId}
+        />
+      )}
 
-          <ApplicationFormModal
+      {canEditApps && (
+        <ApplicationFormModal
           open={appModalOpen}
           mode={appModalMode}
           categories={categories}
@@ -216,7 +224,6 @@ function App() {
             }
           }}
         />
-        </>
       )}
 
       {canEditCategories && (

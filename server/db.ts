@@ -4,6 +4,7 @@ import { mkdirSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import bcrypt from 'bcryptjs'
+import type { PluginServerStatus } from '../shared/plugins.js'
 import type { Role } from '../shared/permissions.js'
 import { isRole } from '../shared/permissions.js'
 
@@ -54,6 +55,18 @@ export interface CategoryRow {
   color: string
   icon: string
   created_at: string
+}
+
+export interface ServerPluginRow {
+  plugin_id: string
+  status: PluginServerStatus
+  install_url: string
+  install_dir: string
+  target_host: string
+  install_target: string
+  last_error: string
+  installed_at: string
+  updated_at: string
 }
 
 let db: Database.Database | undefined
@@ -117,6 +130,18 @@ function initializeSchema(database: Database.Database): void {
       plugin_id TEXT NOT NULL DEFAULT '',
       created_at TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS server_plugins (
+      plugin_id TEXT PRIMARY KEY,
+      status TEXT NOT NULL,
+      install_url TEXT NOT NULL DEFAULT '',
+      install_dir TEXT NOT NULL DEFAULT '',
+      target_host TEXT NOT NULL DEFAULT '',
+      install_target TEXT NOT NULL DEFAULT '',
+      last_error TEXT NOT NULL DEFAULT '',
+      installed_at TEXT NOT NULL DEFAULT '',
+      updated_at TEXT NOT NULL
+    );
   `)
 }
 
@@ -164,6 +189,14 @@ function migrateSchema(database: Database.Database): void {
 
   if (!tableHasColumn(database, 'applications', 'plugin_id')) {
     database.exec(`ALTER TABLE applications ADD COLUMN plugin_id TEXT NOT NULL DEFAULT ''`)
+  }
+
+  if (!tableHasColumn(database, 'server_plugins', 'target_host')) {
+    database.exec(`ALTER TABLE server_plugins ADD COLUMN target_host TEXT NOT NULL DEFAULT ''`)
+  }
+
+  if (!tableHasColumn(database, 'server_plugins', 'install_target')) {
+    database.exec(`ALTER TABLE server_plugins ADD COLUMN install_target TEXT NOT NULL DEFAULT ''`)
   }
 
   const ownerId = getPrimaryUserId(database)
@@ -601,6 +634,108 @@ export function moveApplicationsToCategory(
 
 export function validateRole(role: unknown): role is Role {
   return isRole(role)
+}
+
+export function getServerPlugin(pluginId: string): ServerPluginRow | undefined {
+  return getDb()
+    .prepare(`SELECT * FROM server_plugins WHERE plugin_id = ?`)
+    .get(pluginId) as ServerPluginRow | undefined
+}
+
+function upsertServerPlugin(
+  pluginId: string,
+  status: PluginServerStatus,
+  installUrl: string,
+  installDir: string,
+  targetHost: string,
+  installTarget: string,
+  lastError: string,
+  installedAt: string,
+): ServerPluginRow {
+  const now = new Date().toISOString()
+  getDb()
+    .prepare(
+      `INSERT INTO server_plugins (plugin_id, status, install_url, install_dir, target_host, install_target, last_error, installed_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(plugin_id) DO UPDATE SET
+         status = excluded.status,
+         install_url = excluded.install_url,
+         install_dir = excluded.install_dir,
+         target_host = excluded.target_host,
+         install_target = excluded.install_target,
+         last_error = excluded.last_error,
+         installed_at = CASE WHEN excluded.installed_at != '' THEN excluded.installed_at ELSE server_plugins.installed_at END,
+         updated_at = excluded.updated_at`,
+    )
+    .run(
+      pluginId,
+      status,
+      installUrl,
+      installDir,
+      targetHost,
+      installTarget,
+      lastError,
+      installedAt,
+      now,
+    )
+
+  return getServerPlugin(pluginId)!
+}
+
+export function setServerPluginInstalling(
+  pluginId: string,
+  installDir: string,
+  targetHost: string,
+  installTarget: 'local' | 'remote',
+): ServerPluginRow {
+  return upsertServerPlugin(
+    pluginId,
+    'installing',
+    '',
+    installDir,
+    targetHost,
+    installTarget,
+    '',
+    '',
+  )
+}
+
+export function setServerPluginInstalled(
+  pluginId: string,
+  installUrl: string,
+  installDir: string,
+  targetHost: string,
+  installTarget: 'local' | 'remote',
+): ServerPluginRow {
+  return upsertServerPlugin(
+    pluginId,
+    'installed',
+    installUrl,
+    installDir,
+    targetHost,
+    installTarget,
+    '',
+    new Date().toISOString(),
+  )
+}
+
+export function setServerPluginFailed(
+  pluginId: string,
+  installDir: string,
+  targetHost: string,
+  installTarget: 'local' | 'remote',
+  lastError: string,
+): ServerPluginRow {
+  return upsertServerPlugin(
+    pluginId,
+    'failed',
+    '',
+    installDir,
+    targetHost,
+    installTarget,
+    lastError,
+    '',
+  )
 }
 
 export function closeDb(): void {

@@ -41,26 +41,12 @@ describe('plugin catalog install flow', () => {
     expect(findPluginById(catalog, 'wifi-optimizer')).toBeDefined()
   })
 
-  it('installs a plugin as a dashboard application', async () => {
-    const admin = getUserByUsername('admin')!
+  it('tracks deployable plugin metadata in the catalog', async () => {
     const catalog = await loadPluginCatalog(true)
     const plugin = findPluginById(catalog, 'wifi-optimizer')!
 
-    const categoryId = resolveCategoryIdForName(admin.id, plugin.category)
-    expect(categoryId).toBeDefined()
-
-    const created = createApplication(admin.id, {
-      plugin_id: plugin.id,
-      name: plugin.name,
-      url: plugin.url,
-      description: plugin.description,
-      category: categoryId!,
-      login_username: plugin.loginUsername ?? '',
-      login_password: plugin.loginPassword ?? '',
-    })
-
-    expect(created.plugin_id).toBe('wifi-optimizer')
-    expect(getApplicationByPluginId(admin.id, 'wifi-optimizer')?.id).toBe(created.id)
+    expect(plugin.deploy?.repository).toContain('unifi-ai-optimizer')
+    expect(plugin.deploy?.port).toBe(8088)
   })
 
   it('detects duplicate plugin installs for the same user', async () => {

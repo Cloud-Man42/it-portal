@@ -7,6 +7,7 @@ export type Permission =
   | 'categories.write'
   | 'users.read'
   | 'users.write'
+  | 'plugins.deploy'
 
 export const ROLE_PERMISSIONS: Record<Role, ReadonlyArray<Permission>> = {
   admin: [
@@ -16,6 +17,7 @@ export const ROLE_PERMISSIONS: Record<Role, ReadonlyArray<Permission>> = {
     'categories.write',
     'users.read',
     'users.write',
+    'plugins.deploy',
   ],
   editor: ['apps.read', 'apps.write', 'categories.read', 'categories.write'],
   viewer: ['apps.read', 'categories.read'],
@@ -45,4 +47,8 @@ export function canWriteCategories(role: Role): boolean {
 
 export function canManageUsers(role: Role): boolean {
   return hasPermission(role, 'users.write')
+}
+
+export function canDeployPlugins(role: Role): boolean {
+  return hasPermission(role, 'plugins.deploy')
 }
