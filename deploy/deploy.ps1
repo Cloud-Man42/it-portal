@@ -45,7 +45,7 @@ Write-Host "==> Preparing archive from $Root"
 Push-Location $Root
 try {
   if (Test-Path $Archive) { Remove-Item $Archive -Force }
-  tar -czf $Archive --exclude=node_modules --exclude=dist --exclude=.git --exclude=./certs .
+  tar -czf $Archive --exclude=node_modules --exclude=dist --exclude=.git --exclude=./certs --exclude=./data .
   if ($LASTEXITCODE -ne 0) { throw "tar failed" }
 }
 finally {
@@ -53,7 +53,8 @@ finally {
 }
 
 Write-Host "==> Uploading application"
-Invoke-Remote "mkdir -p $RemoteAppDir"
+Invoke-Remote "mkdir -p $RemoteAppDir/data"
+Invoke-Remote "if [ -f $RemoteAppDir/data/it-portal.db ]; then cp $RemoteAppDir/data/it-portal.db $RemoteAppDir/data/it-portal.db.bak-`$(date +%Y%m%d%H%M%S); fi"
 Send-File $Archive "$RemoteAppDir/it-portal-deploy.tar.gz"
 Invoke-Remote "cd $RemoteAppDir && tar -xzf it-portal-deploy.tar.gz && rm it-portal-deploy.tar.gz"
 
