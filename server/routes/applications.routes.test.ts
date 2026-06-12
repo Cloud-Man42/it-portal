@@ -2,11 +2,11 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
   createUser,
   getUserByUsername,
-  listApplications,
   listCategories,
   setUserApplicationShares,
 } from '../db.js'
 import {
+  createTestAdminApplications,
   createTestAgent,
   loginAs,
   setupTestDatabase,
@@ -25,11 +25,13 @@ describe('applications routes', () => {
   })
 
   it('lists owned applications for admin', async () => {
+    createTestAdminApplications(1)
+
     const agent = createTestAgent()
     await loginAs(agent, 'admin', 'admin')
 
     const response = await agent.get('/api/applications').expect(200)
-    expect(response.body.applications.length).toBeGreaterThan(0)
+    expect(response.body.applications.length).toBe(1)
     expect(response.body.applications.every((app: { canEdit: boolean }) => app.canEdit)).toBe(
       true,
     )
@@ -43,7 +45,7 @@ describe('applications routes', () => {
       password: 'secret',
       role: 'viewer',
     })
-    const adminApp = listApplications(admin.id)[0]
+    const [adminApp] = createTestAdminApplications(1)
 
     setUserApplicationShares(admin.id, viewer.id, [adminApp.id])
 
@@ -112,15 +114,14 @@ describe('applications routes', () => {
       .expect(201)
 
     const viewerAgent = createTestAgent()
-    const viewer = await loginAs(viewerAgent, 'viewer-create', 'secret')
-    const categoryId = listCategories(viewer.id)[0].id
+    await loginAs(viewerAgent, 'viewer-create', 'secret')
 
     const response = await viewerAgent
       .post('/api/applications')
       .send({
         name: 'Blocked',
         url: 'https://blocked.local',
-        category: categoryId,
+        category: 'unused-category',
       })
       .expect(403)
 
@@ -129,7 +130,7 @@ describe('applications routes', () => {
 
   it('prevents updating applications owned by another user', async () => {
     const admin = getUserByUsername('admin')!
-    const adminApp = listApplications(admin.id)[0]
+    const [adminApp] = createTestAdminApplications(1)
 
     const agent = createTestAgent()
     await loginAs(agent, 'admin', 'admin')

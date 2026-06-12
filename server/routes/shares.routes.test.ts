@@ -1,10 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { createUser, getUserByUsername } from '../db.js'
 import {
-  createUser,
-  getUserByUsername,
-  listApplications,
-} from '../db.js'
-import {
+  createTestAdminApplications,
   createTestAgent,
   loginAs,
   setupTestDatabase,
@@ -30,7 +27,7 @@ describe('shares routes', () => {
       password: 'secret',
       role: 'viewer',
     })
-    const adminApps = listApplications(admin.id)
+    const adminApps = createTestAdminApplications(2)
 
     const agent = createTestAgent()
     await loginAs(agent, 'admin', 'admin')
@@ -41,7 +38,7 @@ describe('shares routes', () => {
       .expect(200)
 
     const response = await agent.get('/api/shares').expect(200)
-    expect(response.body.shareableApplications.length).toBe(adminApps.length)
+    expect(response.body.shareableApplications.length).toBe(2)
     expect(response.body.users).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -60,7 +57,7 @@ describe('shares routes', () => {
       password: 'secret',
       role: 'viewer',
     })
-    const adminApps = listApplications(admin.id)
+    const adminApps = createTestAdminApplications(2)
 
     const agent = createTestAgent()
     await loginAs(agent, 'admin', 'admin')

@@ -227,40 +227,9 @@ const SEED_CATEGORY_DEFS = [
   { key: 'other', name: 'Other', color: 'slate', icon: 'grid' },
 ] as const
 
-const SEED_APPLICATION_DEFS = [
-  {
-    name: 'VMware vCenter',
-    url: 'https://vcenter.local',
-    description: 'Manage virtual machines, hosts, and clusters.',
-    categoryKey: 'vmware',
-  },
-  {
-    name: 'Firewall Admin',
-    url: 'https://firewall.local/admin',
-    description: 'Configure firewall rules, NAT, and security policies.',
-    categoryKey: 'security',
-  },
-  {
-    name: 'VPN Portal',
-    url: 'https://vpn.local/portal',
-    description: 'User VPN access, certificates, and connection status.',
-    categoryKey: 'vpn',
-  },
-  {
-    name: 'Network Monitoring',
-    url: 'https://monitoring.local',
-    description: 'Network health dashboards and alerts.',
-    categoryKey: 'monitoring',
-  },
-  {
-    name: 'DNS Admin',
-    url: 'https://dns.local/admin',
-    description: 'Manage DNS zones and records.',
-    categoryKey: 'network',
-  },
-] as const
+export function seedUserDashboard(userId: string, role: Role): void {
+  if (role === 'viewer') return
 
-export function seedUserDashboard(userId: string): void {
   const database = getDb()
   const existing = database
     .prepare(`SELECT COUNT(*) AS count FROM categories WHERE user_id = ?`)
@@ -269,44 +238,29 @@ export function seedUserDashboard(userId: string): void {
   if (existing.count > 0) return
 
   const now = new Date().toISOString()
-  const categoryIds: Record<string, string> = {}
-
   const insertCategory = database.prepare(
     `INSERT INTO categories (id, user_id, name, color, icon, created_at)
      VALUES (?, ?, ?, ?, ?, ?)`,
   )
 
   for (const category of SEED_CATEGORY_DEFS) {
-    const id = randomUUID()
-    categoryIds[category.key] = id
-    insertCategory.run(id, userId, category.name, category.color, category.icon, now)
-  }
-
-  const insertApplication = database.prepare(
-    `INSERT INTO applications (id, user_id, plugin_id, name, url, description, category, login_username, login_password, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-  )
-
-  for (const app of SEED_APPLICATION_DEFS) {
-    insertApplication.run(
+    insertCategory.run(
       randomUUID(),
       userId,
-      '',
-      app.name,
-      app.url,
-      app.description,
-      categoryIds[app.categoryKey],
-      '',
-      '',
+      category.name,
+      category.color,
+      category.icon,
       now,
     )
   }
 }
 
 function ensureUserDashboards(database: Database.Database): void {
-  const users = database.prepare(`SELECT id FROM users`).all() as Array<{ id: string }>
+  const users = database
+    .prepare(`SELECT id, role FROM users`)
+    .all() as Array<{ id: string; role: Role }>
   for (const user of users) {
-    seedUserDashboard(user.id)
+    seedUserDashboard(user.id, user.role)
   }
 }
 
@@ -383,7 +337,7 @@ export function createUser(input: CreateUserInput): PublicUser {
     )
     .run(id, input.username, input.displayName, passwordHash, input.role, now)
 
-  seedUserDashboard(id)
+  seedUserDashboard(id, input.role)
   return toPublicUser(getUserById(id)!)
 }
 
@@ -528,16 +482,37 @@ export function listApplicationsForUser(
 }
 
 export function listCategoriesForUser(userId: string, role: Role): CategoryRow[] {
-  const apps = listApplicationsForUser(userId, role)
-  const categoryIds = [...new Set(apps.map((app) => app.category))]
-  if (categoryIds.length === 0) return []
+  if (role === 'viewer') {
+    const apps = listApplicationsForUser(userId, role)
+    const categoryIds = [...new Set(apps.map((app) => app.category))]
+    if (categoryIds.length === 0) return []
 
-  const placeholders = categoryIds.map(() => '?').join(',')
-  return getDb()
+    const placeholders = categoryIds.map(() => '?').join(',')
+    return getDb()
+      .prepare(
+        `SELECT * FROM categories WHERE id IN (${placeholders}) ORDER BY name COLLATE NOCASE`,
+      )
+      .all(...categoryIds) as CategoryRow[]
+  }
+
+  const ownCategories = listCategories(userId)
+  const apps = listApplicationsForUser(userId, role)
+  const sharedCategoryIds = [
+    ...new Set(apps.filter((app) => app.shared).map((app) => app.category)),
+  ].filter((id) => !ownCategories.some((category) => category.id === id))
+
+  if (sharedCategoryIds.length === 0) return ownCategories
+
+  const placeholders = sharedCategoryIds.map(() => '?').join(',')
+  const sharedCategories = getDb()
     .prepare(
       `SELECT * FROM categories WHERE id IN (${placeholders}) ORDER BY name COLLATE NOCASE`,
     )
-    .all(...categoryIds) as CategoryRow[]
+    .all(...sharedCategoryIds) as CategoryRow[]
+
+  return [...ownCategories, ...sharedCategories].sort((left, right) =>
+    left.name.localeCompare(right.name, 'en', { sensitivity: 'base' }),
+  )
 }
 
 export function listShareAssignments(adminId: string): ShareAssignment[] {

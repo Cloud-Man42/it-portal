@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import request, { type Agent } from 'supertest'
-import { closeDb } from './db.js'
+import { closeDb, createApplication, getUserByUsername, listCategories } from './db.js'
 import { createApp } from './createApp.js'
 
 export function setupTestDatabase(): string {
@@ -20,6 +20,26 @@ export function teardownTestDatabase(tempDir: string): void {
 
 export function createTestAgent() {
   return request.agent(createApp())
+}
+
+export function createTestAdminApplications(count = 2) {
+  const admin = getUserByUsername('admin')!
+  const categoryId = listCategories(admin.id)[0]?.id
+  if (!categoryId) {
+    throw new Error('Admin has no categories to attach test applications to.')
+  }
+
+  return Array.from({ length: count }, (_, index) =>
+    createApplication(admin.id, {
+      plugin_id: '',
+      name: `Admin Test App ${index + 1}`,
+      url: `https://admin-test-${index + 1}.local`,
+      description: 'Test application',
+      category: categoryId,
+      login_username: '',
+      login_password: '',
+    }),
+  )
 }
 
 export async function loginAs(

@@ -95,8 +95,14 @@ describe('user database', () => {
     expect(verifyPassword(row!, 'oldpass')).toBe(false)
   })
 
-  it('seeds a personal dashboard for each user', () => {
+  it('seeds default groups without default connections for new users', () => {
     const admin = getUserByUsername('admin')!
+    const editor = createUser({
+      username: 'editor-seed',
+      displayName: 'Editor Seed',
+      password: 'secret',
+      role: 'editor',
+    })
     const viewer = createUser({
       username: 'viewer1',
       displayName: 'Viewer One',
@@ -105,9 +111,23 @@ describe('user database', () => {
     })
 
     expect(listCategories(admin.id).length).toBeGreaterThan(0)
-    expect(listApplications(admin.id).length).toBeGreaterThan(0)
-    expect(listCategories(viewer.id).length).toBeGreaterThan(0)
-    expect(listApplications(viewer.id).length).toBeGreaterThan(0)
+    expect(listApplications(admin.id).length).toBe(0)
+    expect(listCategories(editor.id).length).toBeGreaterThan(0)
+    expect(listApplications(editor.id).length).toBe(0)
+    expect(listCategories(viewer.id).length).toBe(0)
+    expect(listApplications(viewer.id).length).toBe(0)
+  })
+
+  it('exposes default groups to editors before they add connections', () => {
+    const editor = createUser({
+      username: 'editor-empty',
+      displayName: 'Empty Editor',
+      password: 'secret',
+      role: 'editor',
+    })
+
+    expect(listApplications(editor.id).length).toBe(0)
+    expect(listCategoriesForUser(editor.id, 'editor').length).toBeGreaterThan(0)
   })
 
   it('keeps dashboards isolated per user', () => {
@@ -204,12 +224,30 @@ describe('user database', () => {
       role: 'viewer',
     })
 
-    const adminApps = listApplications(admin.id)
-    expect(adminApps.length).toBeGreaterThan(0)
+    const adminApps = [
+      createApplication(admin.id, {
+        plugin_id: '',
+        name: 'Shared App 1',
+        url: 'https://shared-1.local',
+        description: 'Shared',
+        category: listCategories(admin.id)[0].id,
+        login_username: '',
+        login_password: '',
+      }),
+      createApplication(admin.id, {
+        plugin_id: '',
+        name: 'Shared App 2',
+        url: 'https://shared-2.local',
+        description: 'Shared',
+        category: listCategories(admin.id)[0].id,
+        login_username: '',
+        login_password: '',
+      }),
+    ]
 
     expect(listApplicationsForUser(viewer.id, 'viewer').length).toBe(0)
 
-    const sharedIds = adminApps.slice(0, 2).map((app) => app.id)
+    const sharedIds = adminApps.map((app) => app.id)
     setUserApplicationShares(admin.id, viewer.id, sharedIds)
 
     const viewerApps = listApplicationsForUser(viewer.id, 'viewer')
@@ -236,7 +274,15 @@ describe('user database', () => {
       role: 'editor',
     })
 
-    const adminApp = listApplications(admin.id)[0]
+    const adminApp = createApplication(admin.id, {
+      plugin_id: '',
+      name: 'Admin Shared App',
+      url: 'https://admin-shared.local',
+      description: 'Shared by admin',
+      category: listCategories(admin.id)[0].id,
+      login_username: '',
+      login_password: '',
+    })
     const editorApp = createApplication(editor.id, {
       plugin_id: '',
       name: 'Editor App',
@@ -279,7 +325,26 @@ describe('user database', () => {
       role: 'editor',
     })
 
-    const adminApps = listApplications(admin.id)
+    const adminApps = [
+      createApplication(admin.id, {
+        plugin_id: '',
+        name: 'Replace App 1',
+        url: 'https://replace-1.local',
+        description: 'Shared',
+        category: listCategories(admin.id)[0].id,
+        login_username: '',
+        login_password: '',
+      }),
+      createApplication(admin.id, {
+        plugin_id: '',
+        name: 'Replace App 2',
+        url: 'https://replace-2.local',
+        description: 'Shared',
+        category: listCategories(admin.id)[0].id,
+        login_username: '',
+        login_password: '',
+      }),
+    ]
     setUserApplicationShares(admin.id, viewer.id, [adminApps[0].id])
     setUserApplicationShares(admin.id, viewer.id, [adminApps[1].id])
 
