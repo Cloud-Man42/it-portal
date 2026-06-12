@@ -481,38 +481,74 @@ export function listApplicationsForUser(
   return [...ownApps, ...sharedApps]
 }
 
-export function listCategoriesForUser(userId: string, role: Role): CategoryRow[] {
-  if (role === 'viewer') {
-    const apps = listApplicationsForUser(userId, role)
-    const categoryIds = [...new Set(apps.map((app) => app.category))]
-    if (categoryIds.length === 0) return []
+function fetchCategoriesByIds(categoryIds: string[]): CategoryRow[] {
+  if (categoryIds.length === 0) return []
 
-    const placeholders = categoryIds.map(() => '?').join(',')
-    return getDb()
-      .prepare(
-        `SELECT * FROM categories WHERE id IN (${placeholders}) ORDER BY name COLLATE NOCASE`,
-      )
-      .all(...categoryIds) as CategoryRow[]
-  }
-
-  const ownCategories = listCategories(userId)
-  const apps = listApplicationsForUser(userId, role)
-  const sharedCategoryIds = [
-    ...new Set(apps.filter((app) => app.shared).map((app) => app.category)),
-  ].filter((id) => !ownCategories.some((category) => category.id === id))
-
-  if (sharedCategoryIds.length === 0) return ownCategories
-
-  const placeholders = sharedCategoryIds.map(() => '?').join(',')
-  const sharedCategories = getDb()
+  const placeholders = categoryIds.map(() => '?').join(',')
+  return getDb()
     .prepare(
       `SELECT * FROM categories WHERE id IN (${placeholders}) ORDER BY name COLLATE NOCASE`,
     )
-    .all(...sharedCategoryIds) as CategoryRow[]
+    .all(...categoryIds) as CategoryRow[]
+}
 
-  return [...ownCategories, ...sharedCategories].sort((left, right) =>
-    left.name.localeCompare(right.name, 'en', { sensitivity: 'base' }),
-  )
+export function collectCategoryRowsForUser(userId: string, role: Role): CategoryRow[] {
+  const apps = listApplicationsForUser(userId, role)
+  const categoryIds = [
+    ...new Set([
+      ...listCategories(userId).map((category) => category.id),
+      ...apps.map((app) => app.category),
+    ]),
+  ]
+
+  return fetchCategoriesByIds(categoryIds)
+}
+
+export function dedupeCategoriesByName(
+  categories: CategoryRow[],
+  preferredUserId?: string,
+): CategoryRow[] {
+  const groups = new Map<string, CategoryRow[]>()
+
+  for (const category of categories) {
+    const key = category.name.toLowerCase()
+    const group = groups.get(key) ?? []
+    group.push(category)
+    groups.set(key, group)
+  }
+
+  return [...groups.values()]
+    .map((group) => {
+      if (!preferredUserId) return group[0]
+      return (
+        group.find((category) => category.user_id === preferredUserId) ?? group[0]
+      )
+    })
+    .sort((left, right) =>
+      left.name.localeCompare(right.name, 'en', { sensitivity: 'base' }),
+    )
+}
+
+export function listCategoriesForUser(userId: string, role: Role): CategoryRow[] {
+  const allCategories = collectCategoryRowsForUser(userId, role)
+  if (role === 'viewer') return allCategories
+
+  return dedupeCategoriesByName(allCategories, userId)
+}
+
+export function listMatchingCategoryIds(
+  userId: string,
+  role: Role,
+  categoryId: string,
+): string[] {
+  const allCategories = collectCategoryRowsForUser(userId, role)
+  const selected = allCategories.find((category) => category.id === categoryId)
+  if (!selected) return [categoryId]
+
+  const name = selected.name.toLowerCase()
+  return allCategories
+    .filter((category) => category.name.toLowerCase() === name)
+    .map((category) => category.id)
 }
 
 export function listShareAssignments(adminId: string): ShareAssignment[] {

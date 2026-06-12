@@ -16,6 +16,7 @@ export interface CategoryGroup {
   color: CategoryColor
   icon: GroupIconId
   createdAt: string
+  matchingCategoryIds?: string[]
 }
 
 export type CategoryGroupInput = Pick<CategoryGroup, 'name' | 'color' | 'icon'>

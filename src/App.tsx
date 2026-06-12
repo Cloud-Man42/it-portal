@@ -94,6 +94,7 @@ function App() {
 
   const filteredCount = useFilteredCount(
     applications,
+    categories,
     searchQuery,
     categoryFilter,
   )

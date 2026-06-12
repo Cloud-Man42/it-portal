@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import {
+  collectCategoryRowsForUser,
   countApplicationsInCategory,
   createCategory,
   deleteCategory,
@@ -8,6 +9,7 @@ import {
   listCategoriesForUser,
   moveApplicationsToCategory,
   updateCategory,
+  type CategoryRow,
 } from '../db.js'
 import {
   requireAuth,
@@ -20,20 +22,28 @@ export const categoriesRouter = Router()
 
 categoriesRouter.use(requireAuth)
 
-function toCategoryDto(row: ReturnType<typeof listCategories>[number]) {
+function toCategoryDto(row: CategoryRow, allCategories: CategoryRow[]) {
+  const matchingCategoryIds = allCategories
+    .filter((category) => category.name.toLowerCase() === row.name.toLowerCase())
+    .map((category) => category.id)
+
   return {
     id: row.id,
     name: row.name,
     color: row.color,
     icon: row.icon,
     createdAt: row.created_at,
+    matchingCategoryIds,
   }
 }
 
 categoriesRouter.get('/', requirePermission('categories.read'), (req: AuthenticatedRequest, res) => {
   const user = req.user!
+  const allCategories = collectCategoryRowsForUser(user.id, user.role)
   res.json({
-    categories: listCategoriesForUser(user.id, user.role).map(toCategoryDto),
+    categories: listCategoriesForUser(user.id, user.role).map((category) =>
+      toCategoryDto(category, allCategories),
+    ),
   })
 })
 
@@ -61,7 +71,7 @@ categoriesRouter.post('/', requirePermission('categories.write'), (req: Authenti
     color: color || 'slate',
     icon: icon || 'grid',
   })
-  res.status(201).json({ category: toCategoryDto(created) })
+  res.status(201).json({ category: toCategoryDto(created, [created]) })
 })
 
 categoriesRouter.put('/:id', requirePermission('categories.write'), (req: AuthenticatedRequest, res) => {
@@ -99,7 +109,7 @@ categoriesRouter.put('/:id', requirePermission('categories.write'), (req: Authen
     return
   }
 
-  res.json({ category: toCategoryDto(updated) })
+  res.json({ category: toCategoryDto(updated, [updated]) })
 })
 
 categoriesRouter.delete('/:id', requirePermission('categories.write'), (req: AuthenticatedRequest, res) => {

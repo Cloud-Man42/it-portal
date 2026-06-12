@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { filterApplications } from '../../lib/applicationFilters'
+import { buildCategoryLookup, filterApplications } from '../../lib/applicationFilters'
 import type { CategoryGroup } from '../../types/category'
 import type { Application } from '../../types/application'
 import type { CategoryFilterValue } from '../filters/CategoryFilter'
@@ -24,14 +24,11 @@ export function Dashboard({
   onDelete,
   canEdit = true,
 }: DashboardProps) {
-  const categoryMap = useMemo(
-    () => new Map(categories.map((category) => [category.id, category])),
-    [categories],
-  )
+  const categoryMap = useMemo(() => buildCategoryLookup(categories), [categories])
 
   const filteredApplications = useMemo(
-    () => filterApplications(applications, searchQuery, categoryFilter),
-    [applications, searchQuery, categoryFilter],
+    () => filterApplications(applications, categories, searchQuery, categoryFilter),
+    [applications, categories, searchQuery, categoryFilter],
   )
 
   if (filteredApplications.length === 0) {
@@ -67,11 +64,12 @@ export function Dashboard({
 
 export function useFilteredCount(
   applications: Application[],
+  categories: CategoryGroup[],
   searchQuery: string,
   categoryFilter: CategoryFilterValue,
 ) {
   return useMemo(
-    () => filterApplications(applications, searchQuery, categoryFilter).length,
-    [applications, searchQuery, categoryFilter],
+    () => filterApplications(applications, categories, searchQuery, categoryFilter).length,
+    [applications, categories, searchQuery, categoryFilter],
   )
 }

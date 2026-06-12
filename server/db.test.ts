@@ -118,6 +118,36 @@ describe('user database', () => {
     expect(listApplications(viewer.id).length).toBe(0)
   })
 
+  it('deduplicates sidebar groups by name when shared connections reuse labels', () => {
+    const admin = getUserByUsername('admin')!
+    const editor = createUser({
+      username: 'editor-dedupe',
+      displayName: 'Editor Dedupe',
+      password: 'secret',
+      role: 'editor',
+    })
+
+    const adminApp = createApplication(admin.id, {
+      plugin_id: '',
+      name: 'Admin VMware',
+      url: 'https://vcenter.admin.local',
+      description: 'Shared VMware',
+      category: listCategories(admin.id).find((category) => category.name === 'VMware')!.id,
+      login_username: '',
+      login_password: '',
+    })
+
+    setUserApplicationShares(admin.id, editor.id, [adminApp.id])
+
+    const editorCategories = listCategoriesForUser(editor.id, 'editor')
+    const vmwareGroups = editorCategories.filter(
+      (category) => category.name.toLowerCase() === 'vmware',
+    )
+
+    expect(vmwareGroups).toHaveLength(1)
+    expect(vmwareGroups[0]?.user_id).toBe(editor.id)
+  })
+
   it('exposes default groups to editors before they add connections', () => {
     const editor = createUser({
       username: 'editor-empty',
