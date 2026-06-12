@@ -54,19 +54,19 @@ export function requireAuth(req: AuthenticatedRequest, res: Response, next: Next
 
   const sessionId = readSessionId(req)
   if (!sessionId) {
-    res.status(401).json({ error: 'Inte inloggad.' })
+    res.status(401).json({ error: 'Not signed in.' })
     return
   }
 
   const session = getSession(sessionId)
   if (!session || session.expires_at <= new Date().toISOString()) {
-    res.status(401).json({ error: 'Sessionen har gått ut.' })
+    res.status(401).json({ error: 'Session has expired.' })
     return
   }
 
   const user = getUserById(session.user_id)
   if (!user) {
-    res.status(401).json({ error: 'Användaren finns inte längre.' })
+    res.status(401).json({ error: 'User no longer exists.' })
     return
   }
 
@@ -78,12 +78,12 @@ export function requireAuth(req: AuthenticatedRequest, res: Response, next: Next
 export function requirePermission(permission: Permission) {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
     if (!req.user) {
-      res.status(401).json({ error: 'Inte inloggad.' })
+      res.status(401).json({ error: 'Not signed in.' })
       return
     }
 
     if (!hasPermission(req.user.role, permission)) {
-      res.status(403).json({ error: 'Du har inte behörighet för denna åtgärd.' })
+      res.status(403).json({ error: 'You do not have permission for this action.' })
       return
     }
 

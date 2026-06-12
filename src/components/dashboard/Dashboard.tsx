@@ -48,9 +48,9 @@ export function Dashboard({
   if (filteredApplications.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-slate-700 bg-slate-900/40 px-6 py-16 text-center">
-        <h2 className="text-lg font-medium text-slate-200">Inga applikationer hittades</h2>
+        <h2 className="text-lg font-medium text-slate-200">No applications found</h2>
         <p className="mt-2 text-sm text-slate-500">
-          Justera sökning eller filter, eller lägg till en ny applikation.
+          Try adjusting your search or filter, or add a new application.
         </p>
       </div>
     )

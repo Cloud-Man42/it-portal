@@ -28,7 +28,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
       } else if (err instanceof Error) {
         setError(err.message)
       } else {
-        setError('Inloggningen misslyckades.')
+        setError('Sign in failed.')
       }
     } finally {
       setSubmitting(false)
@@ -44,7 +44,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
           </div>
           <div>
             <h1 className="text-xl font-semibold text-slate-100">IT Portal</h1>
-            <p className="text-sm text-slate-500">Logga in för att fortsätta</p>
+            <p className="text-sm text-slate-500">Sign in to continue</p>
           </div>
         </div>
 
@@ -54,7 +54,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
               htmlFor="login-username"
               className="mb-1.5 block text-sm font-medium text-slate-300"
             >
-              Användarnamn
+              Username
             </label>
             <input
               id="login-username"
@@ -73,7 +73,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
               htmlFor="login-password"
               className="mb-1.5 block text-sm font-medium text-slate-300"
             >
-              Lösenord
+              Password
             </label>
             <input
               id="login-password"
@@ -94,10 +94,9 @@ export function LoginPage({ onLogin }: LoginPageProps) {
             className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <LogIn className="h-4 w-4" aria-hidden="true" />
-            {submitting ? 'Loggar in…' : 'Logga in'}
+            {submitting ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
-
       </div>
     </div>
   )

@@ -23,13 +23,13 @@ authRouter.post('/login', (req, res) => {
   const password = typeof req.body?.password === 'string' ? req.body.password : ''
 
   if (!username || !password) {
-    res.status(400).json({ error: 'Användarnamn och lösenord krävs.' })
+    res.status(400).json({ error: 'Username and password are required.' })
     return
   }
 
   const user = getUserByUsername(username)
   if (!user || !verifyPassword(user, password)) {
-    res.status(401).json({ error: 'Fel användarnamn eller lösenord.' })
+    res.status(401).json({ error: 'Invalid username or password.' })
     return
   }
 

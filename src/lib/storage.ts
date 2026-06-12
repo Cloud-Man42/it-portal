@@ -15,7 +15,10 @@ function isValidApplication(value: unknown): value is Application {
     typeof app.url === 'string' &&
     typeof app.description === 'string' &&
     typeof app.category === 'string' &&
-    typeof app.createdAt === 'string'
+    typeof app.createdAt === 'string' &&
+    (app.loginUsername === undefined || typeof app.loginUsername === 'string') &&
+    (app.loginPassword === undefined || typeof app.loginPassword === 'string') &&
+    (app.pluginId === undefined || typeof app.pluginId === 'string')
   )
 }
 
@@ -23,6 +26,9 @@ function normalizeApplications(applications: Application[]): Application[] {
   const categories = loadCategories()
   return applications.map((app) => ({
     ...app,
+    loginUsername: app.loginUsername ?? '',
+    loginPassword: app.loginPassword ?? '',
+    pluginId: app.pluginId ?? '',
     category: migrateLegacyCategoryId(app.category, categories),
   }))
 }

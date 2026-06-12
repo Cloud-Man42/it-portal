@@ -13,6 +13,22 @@ interface ApplicationFormModalProps {
   onSubmit: (input: ApplicationInput) => void
 }
 
+const emptyForm = (category: string): ApplicationInput => ({
+  name: '',
+  url: '',
+  description: '',
+  category,
+  loginUsername: '',
+  loginPassword: '',
+  pluginId: '',
+})
+
+interface FormErrors {
+  name?: string
+  url?: string
+  category?: string
+}
+
 export function ApplicationFormModal({
   open,
   mode,
@@ -22,13 +38,8 @@ export function ApplicationFormModal({
   onSubmit,
 }: ApplicationFormModalProps) {
   const defaultCategory = categories[0]?.id ?? ''
-  const [form, setForm] = useState<ApplicationInput>({
-    name: '',
-    url: '',
-    description: '',
-    category: defaultCategory,
-  })
-  const [errors, setErrors] = useState<{ name?: string; url?: string; category?: string }>({})
+  const [form, setForm] = useState<ApplicationInput>(emptyForm(defaultCategory))
+  const [errors, setErrors] = useState<FormErrors>({})
 
   useEffect(() => {
     if (!open) return
@@ -39,14 +50,12 @@ export function ApplicationFormModal({
         url: initialValues.url,
         description: initialValues.description,
         category: initialValues.category,
+        loginUsername: initialValues.loginUsername,
+        loginPassword: initialValues.loginPassword,
+        pluginId: initialValues.pluginId,
       })
     } else {
-      setForm({
-        name: '',
-        url: '',
-        description: '',
-        category: defaultCategory,
-      })
+      setForm(emptyForm(defaultCategory))
     }
     setErrors({})
   }, [open, mode, initialValues, defaultCategory])
@@ -54,7 +63,7 @@ export function ApplicationFormModal({
   if (!open) return null
 
   const validate = () => {
-    const nextErrors: { name?: string; url?: string; category?: string } = {}
+    const nextErrors: FormErrors = {}
     const trimmedName = form.name.trim()
     const trimmedUrl = form.url.trim()
 
@@ -85,6 +94,9 @@ export function ApplicationFormModal({
       url: form.url.trim(),
       description: form.description.trim(),
       category: form.category,
+      loginUsername: form.loginUsername.trim(),
+      loginPassword: form.loginPassword,
+      pluginId: form.pluginId,
     })
     onClose()
   }
@@ -96,7 +108,7 @@ export function ApplicationFormModal({
       role="presentation"
     >
       <div
-        className="w-full max-w-lg rounded-xl border border-slate-700 bg-slate-900 p-6 shadow-2xl"
+        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-slate-700 bg-slate-900 p-6 shadow-2xl"
         onClick={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
@@ -111,7 +123,7 @@ export function ApplicationFormModal({
               {mode === 'add' ? 'Add application' : 'Edit application'}
             </h2>
             <p className="mt-1 text-sm text-slate-400">
-              Store shortcuts to your internal admin tools.
+              Store shortcuts and login credentials for your admin tools.
             </p>
           </div>
           <button
@@ -187,8 +199,63 @@ export function ApplicationFormModal({
               }
               rows={3}
               className="w-full resize-none rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/30 focus:outline-none"
-              placeholder="Short description of what this tool does"
+              placeholder="Short description of the tool"
             />
+          </div>
+
+          <div className="rounded-lg border border-slate-800 bg-slate-950/60 p-4">
+            <p className="mb-3 text-sm font-medium text-slate-300">
+              Application login
+            </p>
+            <p className="mb-4 text-xs text-slate-500">Optional — shown on the dashboard card.</p>
+
+            <div className="space-y-3">
+              <div>
+                <label
+                  htmlFor="app-login-username"
+                  className="mb-1.5 block text-sm font-medium text-slate-300"
+                >
+                  Username
+                </label>
+                <input
+                  id="app-login-username"
+                  type="text"
+                  autoComplete="off"
+                  value={form.loginUsername}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      loginUsername: event.target.value,
+                    }))
+                  }
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/30 focus:outline-none"
+                  placeholder="admin@domain.local"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="app-login-password"
+                  className="mb-1.5 block text-sm font-medium text-slate-300"
+                >
+                  Password
+                </label>
+                <input
+                  id="app-login-password"
+                  type="text"
+                  autoComplete="off"
+                  value={form.loginPassword}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      loginPassword: event.target.value,
+                    }))
+                  }
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 font-mono text-sm text-slate-100 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/30 focus:outline-none"
+                  placeholder="Password for the application"
+                />
+              </div>
+            </div>
           </div>
 
           <div>
@@ -232,7 +299,7 @@ export function ApplicationFormModal({
               type="submit"
               className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-sky-500"
             >
-              {mode === 'add' ? 'Add application' : 'Save changes'}
+              {mode === 'add' ? 'Add' : 'Save'}
             </button>
           </div>
         </form>

@@ -40,7 +40,7 @@ export function useUsers(enabled: boolean) {
         body: JSON.stringify(input),
       })
       setUsers((current) =>
-        [...current, data.user].sort((a, b) => a.username.localeCompare(b.username, 'sv')),
+        [...current, data.user].sort((a, b) => a.username.localeCompare(b.username, 'en')),
       )
       return data.user
     },
@@ -55,7 +55,7 @@ export function useUsers(enabled: boolean) {
     setUsers((current) =>
       current
         .map((user) => (user.id === id ? data.user : user))
-        .sort((a, b) => a.username.localeCompare(b.username, 'sv')),
+        .sort((a, b) => a.username.localeCompare(b.username, 'en')),
     )
     return data.user
   }, [])

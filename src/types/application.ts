@@ -4,6 +4,9 @@ export interface Application {
   url: string
   description: string
   category: string
+  loginUsername: string
+  loginPassword: string
+  pluginId: string
   createdAt: string
 }
 

@@ -9,9 +9,9 @@ Built with React, TypeScript, Tailwind CSS, Express, and SQLite. Application and
 - **Login** with session cookies (httpOnly)
 - **User database** editable in the app (admin only)
 - **Role-based permissions:**
-  - **Fullständig åtkomst** (`admin`) — allt + användarhantering
-  - **Redaktör** (`editor`) — lägg till, redigera och ta bort applikationer och grupper
-  - **Endast läsning** (`viewer`) — bläddra, sök och öppna länkar
+  - **Full access** (`admin`) — everything plus user management
+  - **Editor** (`editor`) — add, edit, and delete applications and groups
+  - **Read only** (`viewer`) — browse, search, and open links
 - Dashboard with application cards (name, description, category, URL, icon badge)
 - Click a card to open the URL in a new tab
 - Add, edit, and delete applications (editor/admin)
@@ -34,7 +34,7 @@ Open [http://localhost:5173](http://localhost:5173).
 
 `npm run dev` starts both the API (port 4501) and the Vite frontend (port 5173). The frontend proxies `/api` to the backend.
 
-On first start, change the default admin password immediately via **Användardatabas** in the sidebar.
+On first start, change the default admin password immediately via **User database** in the sidebar.
 
 ### Production build (local preview)
 

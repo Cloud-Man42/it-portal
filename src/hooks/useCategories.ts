@@ -39,7 +39,7 @@ export function useCategories(enabled: boolean) {
       body: JSON.stringify(input),
     })
     setCategories((current) =>
-      [...current, data.category].sort((a, b) => a.name.localeCompare(b.name, 'sv')),
+      [...current, data.category].sort((a, b) => a.name.localeCompare(b.name, 'en')),
     )
     return data.category
   }, [])
@@ -52,7 +52,7 @@ export function useCategories(enabled: boolean) {
     setCategories((current) =>
       current
         .map((category) => (category.id === id ? data.category : category))
-        .sort((a, b) => a.name.localeCompare(b.name, 'sv')),
+        .sort((a, b) => a.name.localeCompare(b.name, 'en')),
     )
   }, [])
 

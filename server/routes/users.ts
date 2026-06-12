@@ -32,22 +32,22 @@ usersRouter.post('/', requirePermission('users.write'), (req, res) => {
   const role = req.body?.role
 
   if (!username || username.length < 2) {
-    res.status(400).json({ error: 'Användarnamn måste vara minst 2 tecken.' })
+    res.status(400).json({ error: 'Username must be at least 2 characters.' })
     return
   }
 
   if (!password || password.length < 4) {
-    res.status(400).json({ error: 'Lösenord måste vara minst 4 tecken.' })
+    res.status(400).json({ error: 'Password must be at least 4 characters.' })
     return
   }
 
   if (!validateRole(role)) {
-    res.status(400).json({ error: 'Ogiltig roll.' })
+    res.status(400).json({ error: 'Invalid role.' })
     return
   }
 
   if (getUserByUsername(username)) {
-    res.status(409).json({ error: 'Användarnamnet finns redan.' })
+    res.status(409).json({ error: 'Username already exists.' })
     return
   }
 
@@ -65,7 +65,7 @@ usersRouter.put('/:id', requirePermission('users.write'), (req: AuthenticatedReq
   const id = routeParam(req, 'id')
   const existing = getUserById(id)
   if (!existing) {
-    res.status(404).json({ error: 'Användaren hittades inte.' })
+    res.status(404).json({ error: 'User not found.' })
     return
   }
 
@@ -77,22 +77,22 @@ usersRouter.put('/:id', requirePermission('users.write'), (req: AuthenticatedReq
   const role = req.body?.role
 
   if (username !== undefined && username.length < 2) {
-    res.status(400).json({ error: 'Användarnamn måste vara minst 2 tecken.' })
+    res.status(400).json({ error: 'Username must be at least 2 characters.' })
     return
   }
 
   if (password !== undefined && password.length > 0 && password.length < 4) {
-    res.status(400).json({ error: 'Lösenord måste vara minst 4 tecken.' })
+    res.status(400).json({ error: 'Password must be at least 4 characters.' })
     return
   }
 
   if (role !== undefined && !validateRole(role)) {
-    res.status(400).json({ error: 'Ogiltig roll.' })
+    res.status(400).json({ error: 'Invalid role.' })
     return
   }
 
   if (username && getUserByUsername(username) && existing.username.toLowerCase() !== username.toLowerCase()) {
-    res.status(409).json({ error: 'Användarnamnet finns redan.' })
+    res.status(409).json({ error: 'Username already exists.' })
     return
   }
 
@@ -110,18 +110,18 @@ usersRouter.delete('/:id', requirePermission('users.write'), (req: Authenticated
   const id = routeParam(req, 'id')
 
   if (req.user?.id === id) {
-    res.status(400).json({ error: 'Du kan inte ta bort ditt eget konto.' })
+    res.status(400).json({ error: 'You cannot delete your own account.' })
     return
   }
 
   if (countUsers() <= 1) {
-    res.status(400).json({ error: 'Minst en användare måste finnas kvar.' })
+    res.status(400).json({ error: 'At least one user must remain.' })
     return
   }
 
   const existing = getUserById(id)
   if (!existing) {
-    res.status(404).json({ error: 'Användaren hittades inte.' })
+    res.status(404).json({ error: 'User not found.' })
     return
   }
 

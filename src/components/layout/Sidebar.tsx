@@ -37,7 +37,7 @@ export function Sidebar({
         </div>
         <div>
           <p className="text-sm font-semibold text-slate-100">IT Portal</p>
-          <p className="text-xs text-slate-500">Admin-genvägar</p>
+          <p className="text-xs text-slate-500">Admin shortcuts</p>
         </div>
       </div>
 
@@ -52,7 +52,7 @@ export function Sidebar({
           }`}
         >
           <LayoutGrid className="h-4 w-4" aria-hidden="true" />
-          Alla applikationer
+          All applications
         </button>
         {categories.map((category) => {
           const meta = getCategoryMeta(category)
@@ -81,7 +81,7 @@ export function Sidebar({
           className="mt-4 flex w-full items-center gap-2 rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-400 transition hover:border-slate-600 hover:bg-slate-800/60 hover:text-slate-200"
         >
           <Settings2 className="h-4 w-4" aria-hidden="true" />
-          Hantera grupper
+          Manage groups
         </button>
       )}
 
@@ -92,15 +92,15 @@ export function Sidebar({
           className="mt-2 flex w-full items-center gap-2 rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-400 transition hover:border-slate-600 hover:bg-slate-800/60 hover:text-slate-200"
         >
           <Users className="h-4 w-4" aria-hidden="true" />
-          Användardatabas
+          User database
         </button>
       )}
 
       <div className="mt-auto rounded-lg border border-slate-800 bg-slate-950/60 p-4 text-xs text-slate-500">
         <p>
-          Visar <span className="font-medium text-slate-300">{filteredCount}</span> av{' '}
+          Showing <span className="font-medium text-slate-300">{filteredCount}</span> of{' '}
           <span className="font-medium text-slate-300">{applicationCount}</span>{' '}
-          applikationer
+          applications
         </p>
       </div>
     </aside>

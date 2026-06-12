@@ -41,7 +41,7 @@ categoriesRouter.post('/', requirePermission('categories.write'), (req: Authenti
   const icon = typeof req.body?.icon === 'string' ? req.body.icon : ''
 
   if (!name) {
-    res.status(400).json({ error: 'Gruppnamn krävs.' })
+    res.status(400).json({ error: 'Group name is required.' })
     return
   }
 
@@ -49,7 +49,7 @@ categoriesRouter.post('/', requirePermission('categories.write'), (req: Authenti
     (category) => category.name.toLowerCase() === name.toLowerCase(),
   )
   if (duplicate) {
-    res.status(409).json({ error: 'En grupp med det namnet finns redan.' })
+    res.status(409).json({ error: 'A group with that name already exists.' })
     return
   }
 
@@ -69,12 +69,12 @@ categoriesRouter.put('/:id', requirePermission('categories.write'), (req: Authen
   const icon = typeof req.body?.icon === 'string' ? req.body.icon : ''
 
   if (!getCategory(userId, id)) {
-    res.status(404).json({ error: 'Gruppen hittades inte.' })
+    res.status(404).json({ error: 'Group not found.' })
     return
   }
 
   if (!name) {
-    res.status(400).json({ error: 'Gruppnamn krävs.' })
+    res.status(400).json({ error: 'Group name is required.' })
     return
   }
 
@@ -82,7 +82,7 @@ categoriesRouter.put('/:id', requirePermission('categories.write'), (req: Authen
     (category) => category.id !== id && category.name.toLowerCase() === name.toLowerCase(),
   )
   if (duplicate) {
-    res.status(409).json({ error: 'En grupp med det namnet finns redan.' })
+    res.status(409).json({ error: 'A group with that name already exists.' })
     return
   }
 
@@ -92,7 +92,7 @@ categoriesRouter.put('/:id', requirePermission('categories.write'), (req: Authen
     icon: icon || 'grid',
   })
   if (!updated) {
-    res.status(404).json({ error: 'Gruppen hittades inte.' })
+    res.status(404).json({ error: 'Group not found.' })
     return
   }
 
@@ -105,13 +105,13 @@ categoriesRouter.delete('/:id', requirePermission('categories.write'), (req: Aut
   const categories = listCategories(userId)
 
   if (categories.length <= 1) {
-    res.status(400).json({ error: 'Minst en grupp måste finnas kvar.' })
+    res.status(400).json({ error: 'At least one group must remain.' })
     return
   }
 
   const existing = categories.find((category) => category.id === id)
   if (!existing) {
-    res.status(404).json({ error: 'Gruppen hittades inte.' })
+    res.status(404).json({ error: 'Group not found.' })
     return
   }
 
@@ -119,7 +119,7 @@ categoriesRouter.delete('/:id', requirePermission('categories.write'), (req: Aut
   if (appCount > 0) {
     const fallback = categories.find((category) => category.id !== id)
     if (!fallback) {
-      res.status(400).json({ error: 'Ingen fallback-grupp tillgänglig.' })
+      res.status(400).json({ error: 'No fallback group available.' })
       return
     }
     moveApplicationsToCategory(userId, id, fallback.id)

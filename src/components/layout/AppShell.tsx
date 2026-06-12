@@ -1,4 +1,4 @@
-import { LogOut, Plus } from 'lucide-react'
+import { LogOut, Package, Plus } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { ROLE_LABELS } from '../../lib/permissions'
 import type { Role } from '../../lib/permissions'
@@ -17,6 +17,7 @@ interface AppShellProps {
   applicationCount: number
   filteredCount: number
   onAddClick: () => void
+  onAddFromCatalog: () => void
   onManageGroups: () => void
   onManageUsers: () => void
   onLogout: () => void
@@ -37,6 +38,7 @@ export function AppShell({
   applicationCount,
   filteredCount,
   onAddClick,
+  onAddFromCatalog,
   onManageGroups,
   onManageUsers,
   onLogout,
@@ -66,7 +68,7 @@ export function AppShell({
             <div>
               <h1 className="text-xl font-semibold text-slate-100">Dashboard</h1>
               <p className="text-sm text-slate-500">
-                Snabb åtkomst till dina infrastrukturverktyg
+                Quick access to your infrastructure tools
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -77,14 +79,24 @@ export function AppShell({
                 onChange={onCategoryChange}
               />
               {canEditApps && (
-                <button
-                  type="button"
-                  onClick={onAddClick}
-                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-sky-500"
-                >
-                  <Plus className="h-4 w-4" aria-hidden="true" />
-                  Lägg till applikation
-                </button>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <button
+                    type="button"
+                    onClick={onAddFromCatalog}
+                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-600 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:border-sky-500/50 hover:bg-slate-800/60"
+                  >
+                    <Package className="h-4 w-4" aria-hidden="true" />
+                    Add from catalog
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onAddClick}
+                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-sky-500"
+                  >
+                    <Plus className="h-4 w-4" aria-hidden="true" />
+                    Add application
+                  </button>
+                </div>
               )}
             </div>
           </div>
@@ -101,7 +113,7 @@ export function AppShell({
               className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-400 transition hover:border-slate-600 hover:bg-slate-800/60 hover:text-slate-200"
             >
               <LogOut className="h-4 w-4" aria-hidden="true" />
-              Logga ut
+              Sign out
             </button>
           </div>
         </header>

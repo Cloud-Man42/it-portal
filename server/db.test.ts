@@ -7,6 +7,8 @@ import {
   countUsers,
   createApplication,
   createUser,
+  getApplicationByPluginId,
+  resolveCategoryIdForName,
   deleteUser,
   getUserByUsername,
   listApplications,
@@ -115,10 +117,13 @@ describe('user database', () => {
 
     const adminCategory = listCategories(admin.id)[0]
     createApplication(editor.id, {
+      plugin_id: '',
       name: 'Editor-only tool',
       url: 'https://editor.local',
       description: 'Only visible to editor',
       category: listCategories(editor.id)[0].id,
+      login_username: '',
+      login_password: '',
     })
 
     expect(listApplications(admin.id).some((app) => app.name === 'Editor-only tool')).toBe(
@@ -130,6 +135,60 @@ describe('user database', () => {
     expect(
       listCategories(editor.id).some((category) => category.id === adminCategory.id),
     ).toBe(false)
+  })
+
+  it('stores application login credentials', () => {
+    const admin = getUserByUsername('admin')!
+    const categoryId = listCategories(admin.id)[0].id
+
+    const created = createApplication(admin.id, {
+      plugin_id: '',
+      name: 'Credentialed App',
+      url: 'https://app.local',
+      description: 'With login',
+      category: categoryId,
+      login_username: 'svc-account',
+      login_password: 's3cret!',
+    })
+
+    expect(created.login_username).toBe('svc-account')
+    expect(created.login_password).toBe('s3cret!')
+
+    const listed = listApplications(admin.id).find((app) => app.id === created.id)
+    expect(listed?.login_username).toBe('svc-account')
+    expect(listed?.login_password).toBe('s3cret!')
+  })
+
+  it('tracks installed plugins per user', () => {
+    const admin = getUserByUsername('admin')!
+    const networkCategory = listCategories(admin.id).find(
+      (category) => category.name === 'Network',
+    )!
+
+    const created = createApplication(admin.id, {
+      plugin_id: 'wake-on-lan',
+      name: 'Wake on LAN',
+      url: 'https://wakeonlan.local',
+      description: 'Wake sleeping machines.',
+      category: networkCategory.id,
+      login_username: '',
+      login_password: '',
+    })
+
+    expect(getApplicationByPluginId(admin.id, 'wake-on-lan')?.id).toBe(created.id)
+    expect(getApplicationByPluginId(admin.id, 'missing-plugin')).toBeUndefined()
+  })
+
+  it('resolves plugin categories by name with fallback', () => {
+    const admin = getUserByUsername('admin')!
+    const vpnCategory = listCategories(admin.id).find(
+      (category) => category.name === 'VPN',
+    )!
+
+    expect(resolveCategoryIdForName(admin.id, 'VPN')).toBe(vpnCategory?.id)
+    expect(resolveCategoryIdForName(admin.id, 'Unknown Group')).toBe(
+      listCategories(admin.id).find((category) => category.name === 'Other')?.id,
+    )
   })
 
   it('prevents deleting the last user', () => {

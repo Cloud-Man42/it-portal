@@ -37,10 +37,13 @@ export interface SessionRow {
 export interface ApplicationRow {
   id: string
   user_id: string
+  plugin_id: string
   name: string
   url: string
   description: string
   category: string
+  login_username: string
+  login_password: string
   created_at: string
 }
 
@@ -109,6 +112,9 @@ function initializeSchema(database: Database.Database): void {
       url TEXT NOT NULL,
       description TEXT NOT NULL DEFAULT '',
       category TEXT NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+      login_username TEXT NOT NULL DEFAULT '',
+      login_password TEXT NOT NULL DEFAULT '',
+      plugin_id TEXT NOT NULL DEFAULT '',
       created_at TEXT NOT NULL
     );
   `)
@@ -146,6 +152,18 @@ function migrateSchema(database: Database.Database): void {
     database.exec(
       `ALTER TABLE applications ADD COLUMN user_id TEXT REFERENCES users(id) ON DELETE CASCADE`,
     )
+  }
+
+  if (!tableHasColumn(database, 'applications', 'login_username')) {
+    database.exec(`ALTER TABLE applications ADD COLUMN login_username TEXT NOT NULL DEFAULT ''`)
+  }
+
+  if (!tableHasColumn(database, 'applications', 'login_password')) {
+    database.exec(`ALTER TABLE applications ADD COLUMN login_password TEXT NOT NULL DEFAULT ''`)
+  }
+
+  if (!tableHasColumn(database, 'applications', 'plugin_id')) {
+    database.exec(`ALTER TABLE applications ADD COLUMN plugin_id TEXT NOT NULL DEFAULT ''`)
   }
 
   const ownerId = getPrimaryUserId(database)
@@ -224,18 +242,21 @@ export function seedUserDashboard(userId: string): void {
   }
 
   const insertApplication = database.prepare(
-    `INSERT INTO applications (id, user_id, name, url, description, category, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO applications (id, user_id, plugin_id, name, url, description, category, login_username, login_password, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   )
 
   for (const app of SEED_APPLICATION_DEFS) {
     insertApplication.run(
       randomUUID(),
       userId,
+      '',
       app.name,
       app.url,
       app.description,
       categoryIds[app.categoryKey],
+      '',
+      '',
       now,
     )
   }
@@ -262,7 +283,7 @@ function seedIfEmpty(database: Database.Database): void {
         `INSERT INTO users (id, username, display_name, password_hash, role, created_at)
          VALUES (?, ?, ?, ?, ?, ?)`,
       )
-      .run(adminId, 'admin', 'Administratör', passwordHash, 'admin', now)
+      .run(adminId, 'admin', 'Administrator', passwordHash, 'admin', now)
   }
 }
 
@@ -416,6 +437,33 @@ export function getApplication(userId: string, id: string): ApplicationRow | und
     .get(userId, id) as ApplicationRow | undefined
 }
 
+export function getApplicationByPluginId(
+  userId: string,
+  pluginId: string,
+): ApplicationRow | undefined {
+  if (!pluginId) return undefined
+
+  return getDb()
+    .prepare(`SELECT * FROM applications WHERE user_id = ? AND plugin_id = ?`)
+    .get(userId, pluginId) as ApplicationRow | undefined
+}
+
+export function resolveCategoryIdForName(
+  userId: string,
+  categoryName: string,
+): string | undefined {
+  const categories = listCategories(userId)
+  if (categories.length === 0) return undefined
+
+  const match = categories.find(
+    (category) => category.name.toLowerCase() === categoryName.toLowerCase(),
+  )
+  if (match) return match.id
+
+  const other = categories.find((category) => category.name.toLowerCase() === 'other')
+  return other?.id ?? categories[0].id
+}
+
 export function createApplication(
   userId: string,
   input: Omit<ApplicationRow, 'id' | 'user_id' | 'created_at'>,
@@ -424,10 +472,21 @@ export function createApplication(
   const createdAt = new Date().toISOString()
   getDb()
     .prepare(
-      `INSERT INTO applications (id, user_id, name, url, description, category, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO applications (id, user_id, plugin_id, name, url, description, category, login_username, login_password, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
-    .run(id, userId, input.name, input.url, input.description, input.category, createdAt)
+    .run(
+      id,
+      userId,
+      input.plugin_id ?? '',
+      input.name,
+      input.url,
+      input.description,
+      input.category,
+      input.login_username,
+      input.login_password,
+      createdAt,
+    )
 
   return getApplication(userId, id)!
 }
@@ -440,10 +499,20 @@ export function updateApplication(
   const result = getDb()
     .prepare(
       `UPDATE applications
-       SET name = ?, url = ?, description = ?, category = ?
+       SET plugin_id = ?, name = ?, url = ?, description = ?, category = ?, login_username = ?, login_password = ?
        WHERE user_id = ? AND id = ?`,
     )
-    .run(input.name, input.url, input.description, input.category, userId, id)
+    .run(
+      input.plugin_id ?? '',
+      input.name,
+      input.url,
+      input.description,
+      input.category,
+      input.login_username,
+      input.login_password,
+      userId,
+      id,
+    )
 
   if (result.changes === 0) return undefined
   return getApplication(userId, id)

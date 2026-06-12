@@ -63,14 +63,14 @@ export function UserFormModal({
     const trimmedUsername = form.username.trim()
 
     if (!trimmedUsername || trimmedUsername.length < 2) {
-      nextErrors.username = 'Användarnamn måste vara minst 2 tecken.'
+      nextErrors.username = 'Username must be at least 2 characters.'
     } else if (
       mode === 'add' &&
       existingUsernames.some(
         (name) => name.toLowerCase() === trimmedUsername.toLowerCase(),
       )
     ) {
-      nextErrors.username = 'Användarnamnet finns redan.'
+      nextErrors.username = 'Username already exists.'
     } else if (
       mode === 'edit' &&
       initialValues &&
@@ -79,17 +79,17 @@ export function UserFormModal({
         (name) => name.toLowerCase() === trimmedUsername.toLowerCase(),
       )
     ) {
-      nextErrors.username = 'Användarnamnet finns redan.'
+      nextErrors.username = 'Username already exists.'
     }
 
     if (mode === 'add' && (!form.password || form.password.length < 4)) {
-      nextErrors.password = 'Lösenord måste vara minst 4 tecken.'
+      nextErrors.password = 'Password must be at least 4 characters.'
     } else if (
       mode === 'edit' &&
       form.password.length > 0 &&
       form.password.length < 4
     ) {
-      nextErrors.password = 'Lösenord måste vara minst 4 tecken.'
+      nextErrors.password = 'Password must be at least 4 characters.'
     }
 
     setErrors(nextErrors)
@@ -130,17 +130,17 @@ export function UserFormModal({
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
             <h2 id="user-form-title" className="text-lg font-semibold text-slate-100">
-              {mode === 'add' ? 'Lägg till användare' : 'Redigera användare'}
+              {mode === 'add' ? 'Add user' : 'Edit user'}
             </h2>
             <p className="mt-1 text-sm text-slate-400">
-              Hantera inloggning och behörighetsnivå.
+              Manage sign-in details and permission level.
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
             className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-800 hover:text-slate-200"
-            aria-label="Stäng"
+            aria-label="Close"
           >
             <X className="h-4 w-4" />
           </button>
@@ -152,7 +152,7 @@ export function UserFormModal({
               htmlFor="user-username"
               className="mb-1.5 block text-sm font-medium text-slate-300"
             >
-              Användarnamn
+              Username
             </label>
             <input
               id="user-username"
@@ -173,7 +173,7 @@ export function UserFormModal({
               htmlFor="user-display-name"
               className="mb-1.5 block text-sm font-medium text-slate-300"
             >
-              Visningsnamn
+              Display name
             </label>
             <input
               id="user-display-name"
@@ -191,7 +191,7 @@ export function UserFormModal({
               htmlFor="user-password"
               className="mb-1.5 block text-sm font-medium text-slate-300"
             >
-              Lösenord{mode === 'edit' ? ' (lämna tomt för oförändrat)' : ''}
+              Password{mode === 'edit' ? ' (leave blank to keep unchanged)' : ''}
             </label>
             <input
               id="user-password"
@@ -212,7 +212,7 @@ export function UserFormModal({
               htmlFor="user-role"
               className="mb-1.5 block text-sm font-medium text-slate-300"
             >
-              Behörighet
+              Permission
             </label>
             <select
               id="user-role"
@@ -239,14 +239,14 @@ export function UserFormModal({
               onClick={onClose}
               className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-800"
             >
-              Avbryt
+              Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
               className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-sky-500 disabled:opacity-60"
             >
-              {submitting ? 'Sparar…' : mode === 'add' ? 'Lägg till' : 'Spara'}
+              {submitting ? 'Saving…' : mode === 'add' ? 'Add' : 'Save'}
             </button>
           </div>
         </form>

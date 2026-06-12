@@ -22,9 +22,9 @@ export const ROLE_PERMISSIONS: Record<Role, ReadonlyArray<Permission>> = {
 }
 
 export const ROLE_LABELS: Record<Role, string> = {
-  admin: 'Fullständig åtkomst',
-  editor: 'Redaktör',
-  viewer: 'Endast läsning',
+  admin: 'Full access',
+  editor: 'Editor',
+  viewer: 'Read only',
 }
 
 export function isRole(value: unknown): value is Role {

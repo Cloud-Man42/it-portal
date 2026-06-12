@@ -14,7 +14,7 @@ async function parseResponse<T>(response: Response): Promise<T> {
 
   if (!response.ok) {
     const message =
-      typeof data.error === 'string' ? data.error : 'Ett oväntat fel inträffade.'
+      typeof data.error === 'string' ? data.error : 'An unexpected error occurred.'
     throw new ApiError(response.status, message)
   }
 

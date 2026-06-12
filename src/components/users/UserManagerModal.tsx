@@ -27,12 +27,12 @@ export function UserManagerModal({
 
   const handleDelete = (user: User) => {
     if (user.id === currentUserId) {
-      window.alert('Du kan inte ta bort ditt eget konto.')
+      window.alert('You cannot delete your own account.')
       return
     }
 
     const confirmed = window.confirm(
-      `Ta bort användaren "${user.displayName}" (${user.username})?`,
+      `Delete user "${user.displayName}" (${user.username})?`,
     )
     if (confirmed) {
       onDelete(user)
@@ -59,17 +59,17 @@ export function UserManagerModal({
               className="flex items-center gap-2 text-lg font-semibold text-slate-100"
             >
               <Users className="h-5 w-5 text-sky-400" aria-hidden="true" />
-              Användardatabas
+              User database
             </h2>
             <p className="mt-1 text-sm text-slate-400">
-              Lägg till, redigera och ta bort användare med olika behörighetsnivåer.
+              Add, edit, and delete users with different permission levels.
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
             className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-800 hover:text-slate-200"
-            aria-label="Stäng"
+            aria-label="Close"
           >
             <X className="h-4 w-4" />
           </button>
@@ -82,11 +82,11 @@ export function UserManagerModal({
             className="mb-4 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-slate-600 px-4 py-3 text-sm font-medium text-slate-300 transition hover:border-sky-500/50 hover:bg-slate-800/60 hover:text-sky-300"
           >
             <Plus className="h-4 w-4" aria-hidden="true" />
-            Lägg till användare
+            Add user
           </button>
 
           {loading ? (
-            <p className="text-sm text-slate-500">Laddar användare…</p>
+            <p className="text-sm text-slate-500">Loading users…</p>
           ) : (
             <ul className="space-y-2">
               {users.map((user) => (
@@ -98,7 +98,7 @@ export function UserManagerModal({
                     <p className="truncate font-medium text-slate-100">
                       {user.displayName}
                       {user.id === currentUserId && (
-                        <span className="ml-2 text-xs text-sky-400">(du)</span>
+                        <span className="ml-2 text-xs text-sky-400">(you)</span>
                       )}
                     </p>
                     <p className="truncate text-sm text-slate-500">@{user.username}</p>
@@ -112,7 +112,7 @@ export function UserManagerModal({
                         type="button"
                         onClick={() => onEdit(user)}
                         className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-800 hover:text-sky-300"
-                        aria-label={`Redigera ${user.displayName}`}
+                        aria-label={`Edit ${user.displayName}`}
                       >
                         <Pencil className="h-4 w-4" />
                       </button>
@@ -121,7 +121,7 @@ export function UserManagerModal({
                         onClick={() => handleDelete(user)}
                         disabled={user.id === currentUserId}
                         className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-800 hover:text-rose-300 disabled:cursor-not-allowed disabled:opacity-40"
-                        aria-label={`Ta bort ${user.displayName}`}
+                        aria-label={`Delete ${user.displayName}`}
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>

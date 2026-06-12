@@ -6,11 +6,13 @@ import { CategoryFormModal } from './components/forms/CategoryFormModal'
 import { Dashboard, useFilteredCount } from './components/dashboard/Dashboard'
 import { AppShell } from './components/layout/AppShell'
 import type { CategoryFilterValue } from './components/filters/CategoryFilter'
+import { PluginCatalogModal } from './components/plugins/PluginCatalogModal'
 import { UserFormModal } from './components/users/UserFormModal'
 import { UserManagerModal } from './components/users/UserManagerModal'
 import { getNextColor } from './lib/categories'
 import { canManageUsers, canWriteApps, canWriteCategories } from './lib/permissions'
 import { useApplications } from './hooks/useApplications'
+import { usePlugins } from './hooks/usePlugins'
 import { useAuth } from './hooks/useAuth'
 import { useCategories } from './hooks/useCategories'
 import { useUsers } from './hooks/useUsers'
@@ -22,8 +24,15 @@ function App() {
   const { user, loading: authLoading, login, logout } = useAuth()
   const isAuthenticated = user !== null
 
-  const { applications, addApplication, updateApplication, deleteApplication } =
-    useApplications(isAuthenticated)
+  const {
+    applications,
+    refresh: refreshApplications,
+    addApplication,
+    updateApplication,
+    deleteApplication,
+  } = useApplications(isAuthenticated)
+  const { loading: pluginsLoading, installingId, fetchCatalog, installPlugin } =
+    usePlugins()
   const { categories, addCategory, updateCategory, deleteCategory } =
     useCategories(isAuthenticated)
 
@@ -42,6 +51,7 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilterValue>('All')
   const [appModalOpen, setAppModalOpen] = useState(false)
+  const [pluginCatalogOpen, setPluginCatalogOpen] = useState(false)
   const [appModalMode, setAppModalMode] = useState<'add' | 'edit'>('add')
   const [editingApplication, setEditingApplication] = useState<Application | undefined>()
 
@@ -109,7 +119,7 @@ function App() {
     const count = applicationCounts[category.id] ?? 0
 
     if (categories.length <= 1) {
-      window.alert('Minst en grupp måste finnas kvar.')
+      window.alert('At least one group must remain.')
       return
     }
 
@@ -118,11 +128,11 @@ function App() {
       if (!fallback) return
 
       const confirmed = window.confirm(
-        `"${category.name}" har ${count} applikation(er). Ta bort gruppen och flytta dem till "${fallback.name}"?`,
+        `"${category.name}" has ${count} application(s). Delete the group and move them to "${fallback.name}"?`,
       )
       if (!confirmed) return
     } else {
-      const confirmed = window.confirm(`Ta bort gruppen "${category.name}"?`)
+      const confirmed = window.confirm(`Delete group "${category.name}"?`)
       if (!confirmed) return
     }
 
@@ -135,7 +145,7 @@ function App() {
   if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-400">
-        Laddar…
+        Loading…
       </div>
     )
   }
@@ -155,6 +165,7 @@ function App() {
         applicationCount={applications.length}
         filteredCount={filteredCount}
         onAddClick={openAddAppModal}
+        onAddFromCatalog={() => setPluginCatalogOpen(true)}
         onManageGroups={() => setGroupManagerOpen(true)}
         onManageUsers={() => setUserManagerOpen(true)}
         onLogout={() => void logout()}
@@ -176,7 +187,22 @@ function App() {
       </AppShell>
 
       {canEditApps && (
-        <ApplicationFormModal
+        <>
+          <PluginCatalogModal
+            open={pluginCatalogOpen}
+            installedApplications={applications}
+            onClose={() => setPluginCatalogOpen(false)}
+            onFetchCatalog={fetchCatalog}
+            onInstall={async (pluginId) => {
+              const application = await installPlugin(pluginId)
+              await refreshApplications()
+              return application
+            }}
+            loading={pluginsLoading}
+            installingId={installingId}
+          />
+
+          <ApplicationFormModal
           open={appModalOpen}
           mode={appModalMode}
           categories={categories}
@@ -190,6 +216,7 @@ function App() {
             }
           }}
         />
+        </>
       )}
 
       {canEditCategories && (

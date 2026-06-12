@@ -25,7 +25,19 @@ function toApplicationDto(row: ReturnType<typeof listApplications>[number]) {
     url: row.url,
     description: row.description,
     category: row.category,
+    loginUsername: row.login_username,
+    loginPassword: row.login_password,
+    pluginId: row.plugin_id,
     createdAt: row.created_at,
+  }
+}
+
+function parseCredentialFields(body: Record<string, unknown>) {
+  return {
+    login_username:
+      typeof body.loginUsername === 'string' ? body.loginUsername.trim() : '',
+    login_password:
+      typeof body.loginPassword === 'string' ? body.loginPassword : '',
   }
 }
 
@@ -56,21 +68,29 @@ applicationsRouter.post('/', requirePermission('apps.write'), (req: Authenticate
   const category = typeof req.body?.category === 'string' ? req.body.category : ''
 
   if (!name) {
-    res.status(400).json({ error: 'Applikationsnamn krävs.' })
+    res.status(400).json({ error: 'Application name is required.' })
     return
   }
 
   if (!url || !isValidUrl(url)) {
-    res.status(400).json({ error: 'Ange en giltig URL som börjar med http:// eller https://.' })
+    res.status(400).json({ error: 'Enter a valid URL starting with http:// or https://.' })
     return
   }
 
   if (!category || !categoryExists(userId, category)) {
-    res.status(400).json({ error: 'Välj en giltig grupp.' })
+    res.status(400).json({ error: 'Select a valid group.' })
     return
   }
 
-  const created = createApplication(userId, { name, url, description, category })
+  const credentials = parseCredentialFields(req.body ?? {})
+  const created = createApplication(userId, {
+    plugin_id: '',
+    name,
+    url,
+    description,
+    category,
+    ...credentials,
+  })
   res.status(201).json({ application: toApplicationDto(created) })
 })
 
@@ -84,28 +104,37 @@ applicationsRouter.put('/:id', requirePermission('apps.write'), (req: Authentica
   const category = typeof req.body?.category === 'string' ? req.body.category : ''
 
   if (!getApplication(userId, id)) {
-    res.status(404).json({ error: 'Applikationen hittades inte.' })
+    res.status(404).json({ error: 'Application not found.' })
     return
   }
 
   if (!name) {
-    res.status(400).json({ error: 'Applikationsnamn krävs.' })
+    res.status(400).json({ error: 'Application name is required.' })
     return
   }
 
   if (!url || !isValidUrl(url)) {
-    res.status(400).json({ error: 'Ange en giltig URL som börjar med http:// eller https://.' })
+    res.status(400).json({ error: 'Enter a valid URL starting with http:// or https://.' })
     return
   }
 
   if (!category || !categoryExists(userId, category)) {
-    res.status(400).json({ error: 'Välj en giltig grupp.' })
+    res.status(400).json({ error: 'Select a valid group.' })
     return
   }
 
-  const updated = updateApplication(userId, id, { name, url, description, category })
+  const existingApp = getApplication(userId, id)
+  const credentials = parseCredentialFields(req.body ?? {})
+  const updated = updateApplication(userId, id, {
+    plugin_id: existingApp?.plugin_id ?? '',
+    name,
+    url,
+    description,
+    category,
+    ...credentials,
+  })
   if (!updated) {
-    res.status(404).json({ error: 'Applikationen hittades inte.' })
+    res.status(404).json({ error: 'Application not found.' })
     return
   }
 
@@ -116,7 +145,7 @@ applicationsRouter.delete('/:id', requirePermission('apps.write'), (req: Authent
   const userId = req.user!.id
   const deleted = deleteApplication(userId, routeParam(req, 'id'))
   if (!deleted) {
-    res.status(404).json({ error: 'Applikationen hittades inte.' })
+    res.status(404).json({ error: 'Application not found.' })
     return
   }
 
